@@ -1,0 +1,49 @@
+# code for boxplot, paired t test, dot pot with line???
+
+
+CountKelvin<-subset(Count_data_2023,River=="Kelvin") 
+matplot(t(data.frame(CountKelvin$Count_at_22_degrees,CountKelvin$Count_at_37_degrees)),type="b", col="black", lty=1, 
+        ylab="Bacterial Count (Colony Forming Units per ml)", 
+        xlab="Temperature (Degrees Celsius)", 
+        main="Viable cell count between 22 degree and 37 degree in River Kelvin", 
+        pch=15, 
+        xaxt="n") 
+
+axis(1,1:2,labels=c("22","37")) 
+
+t.test(CountKelvin$Count_at_22_degrees,CountKelvin$Count_at_37_degrees,paired=TRUE) 
+
+
+CountLuggie<-subset(Count_data_2023,River=="Luggie") 
+matplot(t(data.frame(CountLuggie$Count_at_22_degrees,CountLuggie$Count_at_37_degrees)),type="b", col="black", lty=1, 
+        ylab="Bacterial Count (Colony Forming Units per ml)", 
+        xlab="Temperature (Degrees Celsius)", 
+        main="Viable cell count between 22 degree and 37 degree in River Luggie", 
+        pch=15, 
+        xaxt="n") 
+
+axis(1,1:2,labels=c("22","37")) 
+
+t.test(CountLuggie$Count_at_22_degrees,CountLuggie$Count_at_37_degrees,paired=TRUE) 
+
+boxplot(Count_data_2023$Ratio~Count_data_2023$River, 
+        ylab="Viable cell count ratio", 
+        xlab="River", 
+        main="Ratio of viable cell count at 22 degree to 37 degree between Kelvin and Luggie River", 
+        pch=15, 
+        xaxt="n",
+        lab.cex="0.7", 
+        boxwex=0.7)  
+
+t.test(Count_data_2023$Ratio~Count_data_2023$River,paired=FALSE) 
+
+
+boxplot(CCA_data_2023$cfu_100ml~CCA_data_2023$Water_source, 
+        ylab="The number of colonies (cfu/100ml)", 
+        xlab="River", 
+        main="The number of E.coli colonies in Kelvin and Luggie River", 
+        pch=15, 
+        lab.cex="0.7", 
+        boxwex=0.7) 
+
+t.test(CCA_data_2023$cfu_100ml~CCA_data_2023$Water_source,paired=FALSE) 
