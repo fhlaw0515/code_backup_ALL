@@ -1,0 +1,63 @@
+from PIL import Image                                                    #### Import modules #####
+import torchvision.transforms as transforms
+import torch
+import os
+import shutil
+import pandas as pd
+from resmem import ResMem, transformer
+from PIL import Image
+
+                                                                         #### Prepare a list of image paths so that the resmem model can work on ####
+folder_path = '/path/to/your/folder/of/images'
+image_path_list = os.listdir('/path/to/your/folder/of/images')                # get all file name in the folder as a list
+image_full_path = []                                                          # initialise an empty list to store the full path of images
+                                                             
+for image in image_path_list:                                                 # for every file name
+    image_path = folder_path + "/" + image                                    # append the folder path to form the full file path                          
+    if image.endswith('jpg'):                                                 # if it is an image (add or 'png')
+        image_full_path.append(image_path)                                    # append the image_path to the list of image_full_path
+
+
+                                                                         #### Prepare our images so that it can be processed batch by batch efficiently ####
+transform = transforms.Compose([                                              # Define transform function (coloured images)
+    transforms.Resize((227, 227)),                                            # resmem accept images of height and width 227    
+    transforms.ToTensor()                                                     # transform the pixel image into tensor
+])
+                            
+                                                                         #### The main loop where the ResMem model is ran on each batch of images until all batches are processed ####
+batch_size = 10                                                               # define your batch size 
+score_list = []                                                               # initialise an empty list to store the memorability scores
+model = ResMem(pretrained=True)                                               # Prepare the resmem model 
+model.eval()
+
+for i in range(0, len(image_full_path), batch_size):                          # create an iterable equence with batch_size as step, 0 is starting point, max is the total number of images in the folder
+    batch_paths = image_full_path[i:i + batch_size]                           # slice the list of all image paths to get those belonged to the current batch
+    tensor_list = []                                                          # initialise an empty list to store the list of tensor
+    for image in batch_paths:                                                 # for each image in the batch, perform the transform function which was defined ealier on
+        tensor = transform(Image.open(image).convert('RGB'))                  # open the image and convert image into RGB (which has 3 channels for each image)
+        tensor_list.append(tensor)                                            # append the tensor to the list of all tensor in that batch                                         
+    batch = torch.stack(tensor_list)                                          # stack the list of tensor together 
+    # print(batch.shape)                                                      # debugging line
+                                                                              # (10,3,227,227) is the size of the current batch; 10 is number of images, 3 is three channels, 227 are dimensions of images
+    with torch.no_grad():                                                     # with torch.no_grad() is used when it is an inference mode (not for training), this save memory
+        predictions = model(batch)                                            # calculate the memorability scores of all images in this batch using ResMem, all at one go, not individually
+
+    for path, score in zip(batch_paths, predictions):                         # zip() pairs the path and the prediction together 
+        score_list.append((path, score.item()))                               # extract resmem scores from the prediction object and store this score along with image path as a tuple; append tuple to list
+                                                                         
+                                                                           #### Save ####
+resmem_score = os.path.join(folder_path, "memorability_scores")               # Define the paths to the folders where the CSV file will be stored
+df = pd.DataFrame(score_list, columns=['image_path', 'score'])                # Create a panda dataFrame with two columns
+df.to_csv(resmem_score, index=False)                                          # Save the dataframe as a csv file
+# print("Saved resmem_score")                                                 # debugging line
+
+                                                                          #### References ####
+                                                                              # https://pypi.org/project/resmem/
+                                                                              # @inproceedings{ResMem2021,...
+                                                                              # title = {Embracing New Techniques in Deep Learning for Predicting Image Memorability},...
+                                                                              # author = {Needell, Coen D. and Bainbridge, Wilma A.},...
+                                                                              # booktitle = {Proceedings of the Vision Sciences Society, 2021},...
+                                                                              # year = {2021},publisher = {ARVO Journals},...
+                                                                              # url = {https://www.coeneedell.com/publication/vss2021/vss2021.pdf}}...
+
+
