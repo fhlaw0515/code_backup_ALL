@@ -1,135 +1,189 @@
 # dataframe naming too long, code need tidy up
-# condition to interpret skewness value useful, reused in final year 
-# ddply summarise statistics useful, reused in final year 
+# condition to interpret skewness value, ddply summarise statistics useful, plot geom_signif() and showSignificance() 
+# useful, reused in final year
 
-############### create statistics for percentage of All drugs ############################
+
+############## create statistics for percentage of All drugs ############################
 library(e1071)
 library(plyr)
 
-Four_drugs_with_format <- rbind.data.frame(Adrenaline_ALL_no_NA,Atropine_ALL_no_NA,Propranolol_ALL_no_NA,ACh_ALL_no_NA)
-#View(Four_drugs_with_format)
-
-Four_drugs_with_format$Concentration<-factor(Four_drugs_with_format$Concentration,levels=c("Control","1x10^-6","1x10^-5","1x10^-4","1x10^-3"))
-#View(Four_drugs_with_format)
-
-skewness.Heart_rate_percentage_All_Drugs<-ddply(Four_drugs_with_format,c("Treatment","Concentration"),summarise,skewness.Heart_rate_percentage=skewness(Heart_rate_percentage))
-write.csv(skewness.Heart_rate_percentage_All_Drugs,"skewness.Heart_rate_percentage_All_Drugs.csv",row.names=F)
-#View(skewness.Heart_rate_percentage_All_Drugs)
-
-skewness.Heart_rate_percentage_All_Drugs <- skewness.Heart_rate_percentage_All_Drugs %>% mutate(Skewness_Value_Meaning = "IDK")
-skewness.Heart_rate_percentage_All_Drugs$Skewness_Value_Meaning [skewness.Heart_rate_percentage_All_Drugs$skewness.Heart_rate_percentage > 1] <- "Not normal distributed and positively Skewed"
-skewness.Heart_rate_percentage_All_Drugs$Skewness_Value_Meaning [skewness.Heart_rate_percentage_All_Drugs$skewness.Heart_rate_percentage < -1] <- "Not normal distributed and negatively Skewed"
-skewness.Heart_rate_percentage_All_Drugs$Skewness_Value_Meaning [skewness.Heart_rate_percentage_All_Drugs$skewness.Heart_rate_percentage > 0 & skewness.Heart_rate_percentage_All_Drugs$skewness.Heart_rate_percentage < 0.5] <- "Fairly symmetrical (Positive)"
-skewness.Heart_rate_percentage_All_Drugs$Skewness_Value_Meaning [skewness.Heart_rate_percentage_All_Drugs$skewness.Heart_rate_percentage < 0 & skewness.Heart_rate_percentage_All_Drugs$skewness.Heart_rate_percentage > -0.5] <- "Fairly symmetrical (Negative)"
-skewness.Heart_rate_percentage_All_Drugs$Skewness_Value_Meaning [skewness.Heart_rate_percentage_All_Drugs$skewness.Heart_rate_percentage > 0.5 & skewness.Heart_rate_percentage_All_Drugs$skewness.Heart_rate_percentage < 1] <- "Moderately Skewed (Positive)"
-skewness.Heart_rate_percentage_All_Drugs$Skewness_Value_Meaning [skewness.Heart_rate_percentage_All_Drugs$skewness.Heart_rate_percentage < -0.5 & skewness.Heart_rate_percentage_All_Drugs$skewness.Heart_rate_percentage > -1] <- "Moderately Skewed (Negative)"
-
-write.csv(skewness.Heart_rate_percentage_All_Drugs,"skewness.Heart_rate_percentage_All_Drugs.csv",row.names=F)
-
-backupdataframe <- skewness.Heart_rate_percentage_All_Drugs
-backupdataframe <- backupdataframe %>% mutate(Normality = "Yes")
-#View(backupdataframe)
-backupdataframe$Normality [backupdataframe$skewness.Heart_rate_percentage < -1 | backupdataframe$skewness.Heart_rate_percentage > 1] <- "No"
-
-Statistics_All_Drugs_Normalilty <- backupdataframe
-write.csv(Statistics_All_Drugs_Normalilty,"Statistics_All_Drugs_Normalilty.csv",row.names=F)
-#View(Statistics_All_Drugs_Normalilty)
+All_formatted_drugs <- rbind.data.frame(Atropine_all_conc_filtered,
+                                        Adrenaline_all_conc_filtered,
+                                        Acetylcholine_all_conc_filtered,
+                                        Propranolol_all_conc_filtered)
 
 
+View(All_formatted_drugs)
+write.csv(All_formatted_drugs,"All_formatted_drugs.csv",row.names=F)
 
+Statistics_All_drugs <- ddply(All_formatted_drugs, c("Treatment", "Concentration"), summarise,
+                              N = length(Percentage),
+                              mean = mean(Percentage),
+                              sd = sd(Percentage),
+                              se = sd / sqrt(N),
+                              sum = sum(Percentage),
+                              median = median(Percentage),
+                              q1 = quantile(Percentage, 0.25),
+                              q3 = quantile(Percentage, 0.75),
+                              IQR = q3 - q1,
+                              lower_bound = q1 - 1.5 * IQR,
+                              upper_bound = q3 + 1.5 * IQR,
+                              skewness.HR_Percentage = skewness(Percentage),
+                              Skewness_Value_Meaning = case_when(
+                                skewness.HR_Percentage > 1 ~ "Not normal distributed and positively skewed",
+                                skewness.HR_Percentage < -1 ~ "Not normal distributed and negatively skewed",
+                                skewness.HR_Percentage > 0 & skewness.HR_Percentage < 0.5 ~ "Fairly symmetrical (Positive)",
+                                skewness.HR_Percentage < 0 & skewness.HR_Percentage > -0.5 ~ "Fairly symmetrical (Negative)",
+                                skewness.HR_Percentage > 0.5 & skewness.HR_Percentage < 1 ~ "Moderately skewed (Positive)",
+                                skewness.HR_Percentage < -0.5 & skewness.HR_Percentage > -1 ~ "Moderately skewed (Negative)"
+                              )
+)
 
-
-###############################   Generate SD, Mean, SEM  #######################################
-
-write.csv(Four_drugs_with_format,"Four_drugs_with_format.csv",row.names=F)
-#View(Four_drugs_with_format)
-
-stats.Heart_Rate_Four_Drugs<-ddply(Four_drugs_with_format,c("Treatment","Concentration"),summarise,N=length(Heart_rate_percentage),mean=mean(Heart_rate_percentage),
-                                   sd=sd(Heart_rate_percentage),
-                                   se=sd/sqrt(N),
-                                   sum=sum(Heart_rate_percentage),
-                                   median=median(Heart_rate_percentage) ,
-                                   IQR=IQR(Heart_rate_percentage,type=6)
-                                   )
-#View(stats.Heart_Rate_Four_Drugs)
-write.csv(stats.Heart_Rate_Four_Drugs,"stats.Heart_Rate_Four_Drugs.csv",row.names=F)
-
-df1 <- Statistics_All_Drugs_Normalilty [,3:5]
-#View(df1)
-ALL_Stat_Four_Drugs <- cbind(stats.Heart_Rate_Four_Drugs,df1)
-#View(ALL_Stat_Four_Drugs)
-write.csv(ALL_Stat_Four_Drugs,"ALL_Stat_Four_Drugs.csv",row.names=F)
+View(Statistics_All_drugs)
+write.csv(Statistics_All_drugs,"Statistics_All_drugs.csv",row.names=F)
 
 
 
+################# Propranolol ######################
+rows_without_na <- which(!is.na(Propranolol_Raw_Data_1000_Percent$Percentage))
+daphnia_ids_without_na <- Propranolol_Raw_Data_1000_Percent$Daphnia_ID[rows_without_na]
+cat("Daphnia IDs without NA values:", toString(daphnia_ids_without_na), "\n")
 
-############################################# Example code stat workshop
-Placebo.0months<-subset(metformin,Time=="0_months"&Treatment=="Placebo")
-Placebo.0months.HbA1c<-(Placebo.0months$HbA1c)
-hist(Placebo.0months.HbA1c)
-To add an x-axis label:
-  xlab="HbA1c"
-To add a title: 
-  main="Histogram of HbA1c data from patients treated for 0 months with placebo"
-To change the font of the axis annotation (1=normal; 2=bold; 3=italic; 4=italic and bold):
-  font.axis=2
-To change the font of the axis labels:
-  font.lab=2
+#Propranolol_Percent_with_outliers_and_NA
+Propranolol_Percent_ANOVA_paired_data <- Propranolol_Percent_with_outliers_and_NA %>%
+  filter(Daphnia_ID %in% daphnia_ids_without_na)
+#View(Propranolol_Percent_ANOVA_paired_data)
+write.csv(Propranolol_Percent_ANOVA_paired_data, "Propranolol_Percent_ANOVA_paired_data.csv", row.names = F)
 
-summary(Placebo.0months.HbA1c)
-summary(Placebo.0months)
-mean(mydata$myvariable)     
-median(mydata$myvariable)
-max(mydata$myvariable)
-min(mydata$myvariable)
-
-means<-aggregate(Body_Weight~Time+Treatment,data=metformin,FUN="mean")
-
-std_errors<-aggregate(Body_Weight~Time+Treatment,data=metformin,FUN=function(x)sd(x)/sqrt(length(x)))
-
-where FUN=the appropriate function (eg. mean)
-  
-
-########################
-
-stats.Body_weight<-ddply(metformin,c("Time","Treatment"),summarise,N=length(Body_Weight),mean=mean(Body_Weight))
-sd=sd(Body_Weight)
-se=sd/sqrt(N)
-sum=sum(Body_Weight)
-median=median(Body_Weight) 
-IQR=IQR(Body_Weight,type=6)
-View(stats.Body_weight)
-
-#################################################
+# Perform repeated measures ANOVA
+Propranolol_Percent_ANOVA_paired_data.ANOVA <- aov(Percentage ~ Concentration + Error(Daphnia_ID / Concentration), data = Propranolol_Percent_ANOVA_paired_data)
+summary(Propranolol_Percent_ANOVA_paired_data.ANOVA)
 
 
+############### Adrenaline ##################
+rows_without_na_adrenaline <- which(!is.na(Adrenaline_Raw_Data_1000_Percent$Percentage))
+daphnia_ids_without_na_adrenaline <- Adrenaline_Raw_Data_1000_Percent$Daphnia_ID[rows_without_na_adrenaline]
+cat("Daphnia IDs without NA values for Adrenaline:", toString(daphnia_ids_without_na_adrenaline), "\n")
 
-df<- skewness.Heart_rate_percentage_All_Drugs[skewness.Heart_rate_percentage_All_Drugs$skewness.Heart_rate_percentage > 1|skewness.Heart_rate_percentage_All_Drugs$skewness.Heart_rate_percentage < -1,]
-View(df)
 
-df1$Skewness_Value_Meaning [df1$skewness.Heart_rate_percentage <-1] <- "Not normal distributed and negatively Skewed"
-View(df1)
-View(skewness.Heart_rate_percentage_All_Drugs)
+Adrenaline_Percent_ANOVA_paired_data <- Adrenaline_Percent_with_outliers_and_NA %>%
+  filter(Daphnia_ID %in% daphnia_ids_without_na)
+# View(Adrenaline_Percent_ANOVA_paired_data)
+write.csv(Adrenaline_Percent_ANOVA_paired_data, "Adrenaline_Percent_ANOVA_paired_data.csv", row.names = FALSE)
 
- |skewness.Heart_rate_percentage_All_Drugs$skewness.Heart_rate_percentage < -1]
-################################### Metformin example copied from sattistic workshop I ##################
-library(e1071)
-library(plyr)
-metformin$Treatment<-factor(metformin$Treatment,levels=c("Placebo","Metformin","Drug_A","Drug_B"))
-skewness.Body_Weight<-ddply(metformin,c("Treatment","Time"),summarise,skewness.Body_Weight=skewness(Body_Weight))
-write.csv(skewness.Body_Weight,"skewness.Body_Weight.csv",row.names=F)
+# Perform repeated measures ANOVA
+Adrenaline_Percent_ANOVA_paired_data.ANOVA <- aov(Percentage ~ Concentration + Error(Daphnia_ID / Concentration), data = Adrenaline_Percent_ANOVA_paired_data)
+summary(Adrenaline_Percent_ANOVA_paired_data.ANOVA)
 
-#################################
+############# Atropine ########
+rows_without_na_atropine <- which(!is.na(Atropine_Raw_Data_1000_Percent$Percentage))
+daphnia_ids_without_na_atropine <- Atropine_Raw_Data_1000_Percent$Daphnia_ID[rows_without_na_atropine]
+cat("Daphnia IDs without NA values for Atropine:", toString(daphnia_ids_without_na_atropine), "\n")
 
-skewness.Heart_rate_percentage<-ddply(ALL_no_NA,c("Treatment"),summarise,skewness.Heart_rate_percentage=skewness(Heart_rate_percentage))
-write.csv(skewness.Heart_rate_percentage,"skewness.Heart_rate_percentage_propranolol.csv",row.names=F)
+Atropine_Percent_ANOVA_paired_data <- Atropine_Percent_with_outliers_and_NA %>%
+  filter(Daphnia_ID %in% daphnia_ids_without_na)
+# View(Atropine_Percent_ANOVA_paired_data)
+write.csv(Atropine_Percent_ANOVA_paired_data, "Atropine_Percent_ANOVA_paired_data.csv", row.names = FALSE)
 
-Propranolol_control<-subset(ALL_no_NA,Treatment=="Control")
-View(Propranolol_control)
-Propranolol_control.Heart_rate_percentage<-(Propranolol_control$Heart_rate_percentage)
-View(Propranolol_control.Heart_rate_percentage)
-hist(Propranolol_control.Heart_rate_percentage, 
-     xlab="Heart rate (% of control)",
-     main="Histogram of heart rate data from Daphnia with control for Propranolol",
-     font.axis=1,
-     font.label=1)
+# Perform repeated measures ANOVA
+Atropine_Percent_ANOVA_paired_data.ANOVA <- aov(Percentage ~ Concentration + Error(Daphnia_ID / Concentration), data = Atropine_Percent_ANOVA_paired_data)
+summary(Atropine_Percent_ANOVA_paired_data.ANOVA)
+
+############### Acetylcholine ###########
+rows_without_na_acetylcholine <- which(!is.na(Acetylcholine_Raw_Data_1000_Percent$Percentage))
+daphnia_ids_without_na_acetylcholine <- Acetylcholine_Raw_Data_1000_Percent$Daphnia_ID[rows_without_na_acetylcholine]
+cat("Daphnia IDs without NA values for Acetylcholine:", toString(daphnia_ids_without_na_acetylcholine), "\n")
+
+
+Acetylcholine_Percent_ANOVA_paired_data <- Acetylcholine_Percent_with_outliers_and_NA %>%
+  filter(Daphnia_ID %in% daphnia_ids_without_na)
+# View(Acetylcholine_Percent_ANOVA_paired_data)
+write.csv(Acetylcholine_Percent_ANOVA_paired_data, "Acetylcholine_Percent_ANOVA_paired_data.csv", row.names = FALSE)
+
+# Perform repeated measures ANOVA
+Acetylcholine_Percent_ANOVA_paired_data.ANOVA <- aov(Percentage ~ Concentration + Error(Daphnia_ID / Concentration), data = Acetylcholine_Percent_ANOVA_paired_data)
+summary(Acetylcholine_Percent_ANOVA_paired_data.ANOVA)
+
+
+##################### Tukey test ################
+library(emmeans)
+Adrenaline_Percent_ANOVA_paired_data.ANOVA <- aov(Percentage ~ Concentration + Error(Daphnia_ID / Concentration), data = Adrenaline_Percent_ANOVA_paired_data)
+Adrenaline_emm <- emmeans(Adrenaline_Percent_ANOVA_paired_data.ANOVA, specs = ~Concentration)
+Adrenaline_tukey <- pairs(Adrenaline_emm, adjust = "tukey")
+print(Adrenaline_tukey)
+
+Atropine_Percent_ANOVA_paired_data.ANOVA <- aov(Percentage ~ Concentration + Error(Daphnia_ID / Concentration), data = Atropine_Percent_ANOVA_paired_data)
+Atropine_emm <- emmeans(Atropine_Percent_ANOVA_paired_data.ANOVA, specs = ~Concentration)
+Atropine_tukey <- pairs(Atropine_emm, adjust = "tukey")
+print(Atropine_tukey)
+
+Acetylcholine_emm <- emmeans(Acetylcholine_Percent_ANOVA_paired_data.ANOVA, specs = ~Concentration)
+Acetylcholine_tukey <- pairs(Acetylcholine_emm, adjust = "tukey")
+print(Acetylcholine_tukey)
+
+Propranolol_emm <- emmeans(Propranolol_Percent_ANOVA_paired_data.ANOVA, specs = ~Concentration)
+Propranolol_tukey <- pairs(Propranolol_emm, adjust = "tukey")
+print(Propranolol_tukey)
+
+write.csv(Atropine_Percent_ANOVA_paired_data.ANOVA,"Atropine_Percent_ANOVA_paired_data.ANOVA.csv",row.names=F)
+write.csv(Acetylcholine_Percent_ANOVA_paired_data,"Acetylcholine_Percent_ANOVA_paired_data.csv",row.names=F)
+write.csv(Adrenaline_Percent_ANOVA_paired_data.ANOVA,"Adrenaline_Percent_ANOVA_paired_data.ANOVA.csv",row.names=F)
+write.csv(Propranolol_Percent_ANOVA_paired_data.ANOVA,"Propranolol_Percent_ANOVA_paired_data.ANOVA.csv",row.names=F)
+
+################# plot incomplete ########## (Incorrect star position)
+Atropine_Percent_ANOVA_paired_data$Concentration <- as.factor(Atropine_Percent_ANOVA_paired_data$Concentration)
+Atropine_Percent_ANOVA_paired_data$Concentration <- factor(Atropine_Percent_ANOVA_paired_data$Concentration, levels = c("Control", "1", "10", "100", "1000"))
+
+boxplotAtropineTrial <- ggplot(Atropine_Percent_ANOVA_paired_data, aes(x = Concentration, y = Percentage), outline = FALSE) +
+  geom_boxplot(alpha = 0.7, outlier.colour = NA) +
+  ggtitle("Effect of concentration of Atropine on Heart rate in Daphnia (for ANOVA)") +
+  labs(y = "Heart rate (% of control)", x = "Concentration (µM) ") +
+  theme(plot.title = element_text(hjust = 0.5, size = 15),
+        axis.text.x = element_text(size = 12), axis.text.y = element_text(size = 12)) +
+  geom_signif(annotations = c("**"), y_position = c(190), xmin = c(1), xmax = c(5)) +
+  scale_x_discrete(labels = c("Control", "1", "10", "100", "1000")) +
+  showSignificance(c(1, 4), 70, +0.05, "*") +
+  showSignificance(c(2, 5), 60, +0.05, "*")
+
+Acetylcholine_Percent_ANOVA_paired_data$Concentration <- as.factor(Acetylcholine_Percent_ANOVA_paired_data$Concentration)
+Acetylcholine_Percent_ANOVA_paired_data$Concentration <- factor(Acetylcholine_Percent_ANOVA_paired_data$Concentration, levels = c("Control", "1", "10", "100", "1000"))
+
+boxplotAcetylcholineTrial <- ggplot(Acetylcholine_Percent_ANOVA_paired_data, aes(x = Concentration, y = Percentage), outline = FALSE) +
+  geom_boxplot(alpha = 0.7, outlier.colour = NA) +
+  ggtitle("Effect of concentration of Acetylcholine on Heart rate in Daphnia (for ANOVA)") +
+  labs(y = "Heart rate (% of control)", x = "Concentration (µM) ") +
+  theme(plot.title = element_text(hjust = 0.5, size = 15),
+        axis.text.x = element_text(size = 12), axis.text.y = element_text(size = 12)) +
+  geom_signif(annotations = c("**"), y_position = c(190), xmin = c(1), xmax = c(5)) +
+  scale_x_discrete(labels = c("Control", "1", "10", "100", "1000")) +
+  showSignificance(c(1, 4), 70, +0.05, "*") +
+  showSignificance(c(2, 5), 60, +0.05, "*")
+
+Acetylcholine_Percent_ANOVA_paired_data$Concentration <- as.factor(Acetylcholine_Percent_ANOVA_paired_data$Concentration)
+Acetylcholine_Percent_ANOVA_paired_data$Concentration <- factor(Acetylcholine_Percent_ANOVA_paired_data$Concentration, levels = c("Control", "1", "10", "100", "1000"))
+
+boxplotAcetylcholineTrial <- ggplot(Acetylcholine_Percent_ANOVA_paired_data, aes(x = Concentration, y = Percentage), outline = FALSE) +
+  geom_boxplot(alpha = 0.7, outlier.colour = NA) +
+  ggtitle("Effect of concentration of Acetylcholine on Heart rate in Daphnia (for ANOVA)") +
+  labs(y = "Heart rate (% of control)", x = "Concentration (µM) ") +
+  theme(plot.title = element_text(hjust = 0.5, size = 15),
+        axis.text.x = element_text(size = 12), axis.text.y = element_text(size = 12)) +
+  geom_signif(annotations = c("**"), y_position = c(190), xmin = c(1), xmax = c(5)) +
+  scale_x_discrete(labels = c("Control", "1", "10", "100", "1000")) +
+  showSignificance(c(1, 4), 70, +0.05, "*") +
+  showSignificance(c(2, 5), 60, +0.05, "*")
+
+Propranolol_Percent_ANOVA_paired_data$Concentration <- as.factor(Propranolol_Percent_ANOVA_paired_data$Concentration)
+Propranolol_Percent_ANOVA_paired_data$Concentration <- factor(Propranolol_Percent_ANOVA_paired_data$Concentration, levels = c("Control", "1", "10", "100", "1000"))
+
+boxplotPropranololTrial <- ggplot(Propranolol_Percent_ANOVA_paired_data, aes(x = Concentration, y = Percentage), outline = FALSE) +
+  geom_boxplot(alpha = 0.7, outlier.colour = NA) +
+  ggtitle("Effect of concentration of Propranolol on Heart rate in Daphnia (for ANOVA)") +
+  labs(y = "Heart rate (% of control)", x = "Concentration (µM) ") +
+  theme(plot.title = element_text(hjust = 0.5, size = 15),
+        axis.text.x = element_text(size = 12), axis.text.y = element_text(size = 12)) +
+  geom_signif(annotations = c("**"), y_position = c(190), xmin = c(1), xmax = c(5)) +
+  scale_x_discrete(labels = c("Control", "1", "10", "100", "1000")) +
+  showSignificance(c(1, 4), 70, +0.05, "*") +
+  showSignificance(c(2, 5), 60, +0.05, "*")
+
