@@ -1,0 +1,175 @@
+library(readr)
+library(e1071)
+library(plyr)
+library(dplyr)
+Adrenaline_Raw_Data_All_ <- read_csv("Adrenaline Raw Data All .csv")
+Adrenaline_Raw_Data_All_ <- Adrenaline_Raw_Data_All_ %>% mutate(Daphnia_ID = 1:nrow(Adrenaline_Raw_Data_All_))
+Adrenaline_Raw_Data_All_ <- Adrenaline_Raw_Data_All_ %>% mutate(Treatment = "Adrenaline")
+Adrenaline_Raw_Data_All_ <- Adrenaline_Raw_Data_All_[, colSums(is.na(Adrenaline_Raw_Data_All_)) != nrow(Adrenaline_Raw_Data_All_)]
+View(Adrenaline_Raw_Data_All_)
+
+
+# Control
+Adrenaline_Raw_Data_Control <- Adrenaline_Raw_Data_All_ %>% mutate(Concentration = "Control")
+Adrenaline_Raw_Data_Control <- Adrenaline_Raw_Data_Control[, c(1, 6:8)]
+colnames(Adrenaline_Raw_Data_Control) <- c("HR", "Daphnia_ID","Treatment","Concentration")
+
+Raw_Control_Mean_Adrenaline <- mean(Adrenaline_Raw_Data_Control$HR)
+#View(Raw_Control_Mean_Adrenaline)
+
+
+# 1x10^-6 # 1 microM
+Adrenaline_Raw_Data_1 <- Adrenaline_Raw_Data_All_ %>% mutate(Concentration = "1")
+Adrenaline_Raw_Data_1 <- Adrenaline_Raw_Data_1[, c(2, 6:8)]
+colnames(Adrenaline_Raw_Data_1) <- c("HR", "Daphnia_ID","Treatment","Concentration")
+
+# 1x10^-6 # 10 microM
+Adrenaline_Raw_Data_10 <- Adrenaline_Raw_Data_All_ %>% mutate(Concentration = "10")
+Adrenaline_Raw_Data_10 <- Adrenaline_Raw_Data_10[, c(3, 6:8)]
+colnames(Adrenaline_Raw_Data_10) <- c("HR", "Daphnia_ID","Treatment","Concentration")
+
+# 1x10^-6 # 100 microM
+Adrenaline_Raw_Data_100 <- Adrenaline_Raw_Data_All_ %>% mutate(Concentration = "100")
+Adrenaline_Raw_Data_100 <- Adrenaline_Raw_Data_100[, c(4, 6:8)]
+colnames(Adrenaline_Raw_Data_100) <- c("HR", "Daphnia_ID","Treatment","Concentration")
+
+# 1x10^-6 # 1000 microM
+Adrenaline_Raw_Data_1000 <- Adrenaline_Raw_Data_All_ %>% mutate(Concentration = "1000")
+Adrenaline_Raw_Data_1000 <- Adrenaline_Raw_Data_1000[, c(5:8)]
+colnames(Adrenaline_Raw_Data_1000) <- c("HR", "Daphnia_ID","Treatment","Concentration")
+
+#View(Adrenaline_Raw_Data_Control)
+#View(Adrenaline_Raw_Data_1)
+#View(Adrenaline_Raw_Data_10)
+#View(Adrenaline_Raw_Data_100)
+#View(Adrenaline_Raw_Data_1000)
+
+write.csv(Adrenaline_Raw_Data_1,"Adrenaline_Raw_Data_1.csv",row.names=F)
+write.csv(Adrenaline_Raw_Data_10,"Adrenaline_Raw_Data_10.csv",row.names=F)
+write.csv(Adrenaline_Raw_Data_100,"Adrenaline_Raw_Data_100.csv",row.names=F)
+write.csv(Adrenaline_Raw_Data_1000,"Adrenaline_Raw_Data_1000.csv",row.names=F)
+write.csv(Adrenaline_Raw_Data_Control,"Adrenaline_Raw_Data_Control.csv",row.names=F)
+
+########################### calculate the heart rate percentage with respect to control group ########################
+Adrenaline_Control_Percent <- Adrenaline_Raw_Data_Control %>% mutate(Percentage=HR/Raw_Control_Mean_Adrenaline*100)            
+Adrenaline_Raw_Data_1_Percent <- Adrenaline_Raw_Data_1  %>% mutate(Percentage=HR/Raw_Control_Mean_Adrenaline*100)    
+Adrenaline_Raw_Data_10_Percent <- Adrenaline_Raw_Data_10  %>% mutate(Percentage=HR/Raw_Control_Mean_Adrenaline*100)  
+Adrenaline_Raw_Data_100_Percent <- Adrenaline_Raw_Data_100  %>% mutate(Percentage=HR/Raw_Control_Mean_Adrenaline*100)  
+Adrenaline_Raw_Data_1000_Percent <- Adrenaline_Raw_Data_1000  %>% mutate(Percentage=HR/Raw_Control_Mean_Adrenaline*100)  
+
+write.csv(Adrenaline_Control_Percent,"Adrenaline_Control_Percent.csv",row.names=F)
+write.csv(Adrenaline_Raw_Data_1_Percent,"Adrenaline_Raw_Data_1_Percent.csv",row.names=F)
+write.csv(Adrenaline_Raw_Data_10_Percent,"Adrenaline_Raw_Data_10_Percent.csv",row.names=F)
+write.csv(Adrenaline_Raw_Data_100_Percent,"Adrenaline_Raw_Data_100_Percent.csv",row.names=F)
+write.csv(Adrenaline_Raw_Data_1000_Percent,"Adrenaline_Raw_Data_1000_Percent.csv",row.names=F)
+
+
+####################### create datafram with NA and outliers for future use #####################
+Adrenaline_Percent_with_outliers_and_NA <- rbind(Adrenaline_Control_Percent,
+                                                 Adrenaline_Raw_Data_1_Percent,
+                                                 Adrenaline_Raw_Data_1_Percent,
+                                                 Adrenaline_Raw_Data_10_Percent,
+                                                 Adrenaline_Raw_Data_100_Percent,
+                                                 Adrenaline_Raw_Data_1000_Percent)
+#View(Adrenaline_Percent_with_outliers_and_NA)
+write.csv(Adrenaline_Percent_with_outliers_and_NA, "Adrenaline_Percent_with_outliers_and_NA.csv", row.names = F)
+
+
+#################
+
+##################### omit all rows containing NA values within each concentration ######################
+Adrenaline_Control_Percent_no_NA <- na.omit(Adrenaline_Control_Percent)            
+Adrenaline_Raw_Data_1_Percent_no_NA <- na.omit(Adrenaline_Raw_Data_1_Percent)     
+Adrenaline_Raw_Data_10_Percent_no_NA <- na.omit(Adrenaline_Raw_Data_10_Percent)  
+Adrenaline_Raw_Data_100_Percent_no_NA <- na.omit(Adrenaline_Raw_Data_100_Percent)  
+Adrenaline_Raw_Data_1000_Percent_no_NA <- na.omit(Adrenaline_Raw_Data_1000_Percent)   
+
+write.csv(Adrenaline_Control_Percent_no_NA,"Adrenaline_Control_Percent_no_NA.csv",row.names=F)
+write.csv(Adrenaline_Raw_Data_1_Percent_no_NA,"Adrenaline_Raw_Data_1_Percent_no_NA.csv",row.names=F)
+write.csv(Adrenaline_Raw_Data_10_Percent_no_NA,"Adrenaline_Raw_Data_10_Percent_no_NA.csv",row.names=F)
+write.csv(Adrenaline_Raw_Data_100_Percent_no_NA,"Adrenaline_Raw_Data_100_Percent_no_NA.csv",row.names=F)
+write.csv(Adrenaline_Raw_Data_1000_Percent_no_NA,"Adrenaline_Raw_Data_1000_Percent_no_NA.csv",row.names=F)
+#View(Adrenaline_Control_Percent_no_NA)
+
+########################## Control data filter outliers #######################
+Adrenaline_Control_Percent_no_NA_stat <- Adrenaline_Control_Percent_no_NA %>% mutate(
+                  q1 = quantile(Percentage,0.25),
+                  q3 = quantile(Percentage,0.75),
+                  IQR= q3-q1,
+                  lower_bound = q1-1.5*IQR,
+                  upper_bound = q3 + 1.5*IQR)
+
+#View(Adrenaline_Control_Percent_no_NA_stat)
+
+Adrenaline_Control_Percent_filtered_data <- Adrenaline_Control_Percent_no_NA_stat %>%
+  filter(Percentage >= lower_bound & Percentage <= upper_bound)
+#View(Adrenaline_Control_Percent_filtered_data)
+write.csv(Adrenaline_Control_Percent_filtered_data,"Adrenaline_Control_Percent_filtered_data.csv",row.names=F)
+
+################### 1 microM ####################
+Adrenaline_Raw_Data_1_Percent_no_NA_stat <- Adrenaline_Raw_Data_1_Percent_no_NA %>% mutate(
+  q1 = quantile(Percentage,0.25),
+  q3 = quantile(Percentage,0.75),
+  IQR= q3-q1,
+  lower_bound = q1-1.5*IQR,
+  upper_bound = q3 + 1.5*IQR)
+
+Adrenaline_Raw_Data_1_Percent_filtered_data <- Adrenaline_Raw_Data_1_Percent_no_NA_stat %>%
+  filter(Percentage >= lower_bound & Percentage <= upper_bound)
+
+#View(Adrenaline_Raw_Data_1_Percent_filtered_data)
+write.csv(Adrenaline_Raw_Data_1_Percent_filtered_data,"Adrenaline_Raw_Data_1_Percent_filtered_data.csv",row.names=F)
+
+######################### 10 microM #############
+Adrenaline_Raw_Data_10_Percent_no_NA_stat <- Adrenaline_Raw_Data_10_Percent_no_NA %>% mutate(
+  q1 = quantile(Percentage,0.25),
+  q3 = quantile(Percentage,0.75),
+  IQR= q3-q1,
+  lower_bound = q1-1.5*IQR,
+  upper_bound = q3 + 1.5*IQR)
+
+Adrenaline_Raw_Data_10_Percent_filtered_data <- Adrenaline_Raw_Data_10_Percent_no_NA_stat %>%
+  filter(Percentage >= lower_bound & Percentage <= upper_bound)
+
+#View(Adrenaline_Raw_Data_10_Percent_filtered_data)
+write.csv(Adrenaline_Raw_Data_10_Percent_filtered_data,"Adrenaline_Raw_Data_10_Percent_filtered_data.csv",row.names=F)
+
+################ 100 microM ################
+Adrenaline_Raw_Data_100_Percent_no_NA_stat <- Adrenaline_Raw_Data_100_Percent_no_NA %>% mutate(
+  q1 = quantile(Percentage,0.25),
+  q3 = quantile(Percentage,0.75),
+  IQR= q3-q1,
+  lower_bound = q1-1.5*IQR,
+  upper_bound = q3 + 1.5*IQR)
+
+Adrenaline_Raw_Data_100_Percent_filtered_data <- Adrenaline_Raw_Data_100_Percent_no_NA_stat %>%
+  filter(Percentage >= lower_bound & Percentage <= upper_bound)
+
+#View(Adrenaline_Raw_Data_100_Percent_filtered_data)
+write.csv(Adrenaline_Raw_Data_100_Percent_filtered_data,"Adrenaline_Raw_Data_100_Percent_filtered_data.csv",row.names=F)
+
+###################### 1000 microM ###################
+Adrenaline_Raw_Data_1000_Percent_no_NA_stat <- Adrenaline_Raw_Data_1000_Percent_no_NA %>% mutate(
+  q1 = quantile(Percentage,0.25),
+  q3 = quantile(Percentage,0.75),
+  IQR= q3-q1,
+  lower_bound = q1-1.5*IQR,
+  upper_bound = q3 + 1.5*IQR)
+
+Adrenaline_Raw_Data_1000_Percent_filtered_data <- Adrenaline_Raw_Data_1000_Percent_no_NA_stat %>%
+  filter(Percentage >= lower_bound & Percentage <= upper_bound)
+
+#View(Adrenaline_Raw_Data_1000_Percent_filtered_data)
+write.csv(Adrenaline_Raw_Data_1000_Percent_filtered_data,"Adrenaline_Raw_Data_1000_Percent_filtered_data.csv",row.names=F)
+
+
+#################################
+Adrenaline_all_conc_filtered <- rbind(Adrenaline_Control_Percent_filtered_data,
+                                      Adrenaline_Raw_Data_1_Percent_filtered_data,
+                                      Adrenaline_Raw_Data_10_Percent_filtered_data,
+                                      Adrenaline_Raw_Data_100_Percent_filtered_data,
+                                      Adrenaline_Raw_Data_1000_Percent_filtered_data)
+
+View(Adrenaline_all_conc_filtered)  
+write.csv(Adrenaline_all_conc_filtered, "Adrenaline_all_conc_filtered.csv", row.names = F)
+
