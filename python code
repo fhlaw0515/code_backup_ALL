@@ -39,7 +39,7 @@ for i in range(0, len(image_full_path), batch_size):                          # 
     batch = torch.stack(tensor_list)                                          # stack the list of tensor together 
     # print(batch.shape)                                                      # debugging line
                                                                               # (10,3,227,227) is the size of the current batch; 10 is number of images, 3 is three channels, 227 are dimensions of images
-    with torch.no_grad():                                                     # with torch.no_grad() is used when it is an inference mode (not for training), this save memory
+    with torch.no_grad():                                                     # with torch.no_grad() is used when it is an inference mode (not for training), this save memory by not keeping track of gradients
         predictions = model(batch)                                            # calculate the memorability scores of all images in this batch using ResMem, all at one go, not individually
 
     for path, score in zip(batch_paths, predictions):                         # zip() pairs the path and the prediction together 
