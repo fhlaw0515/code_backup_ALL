@@ -1,4 +1,4 @@
-# code for boxplot, paired t test, dot pot with line???
+# code for boxplot, paired t test, scatter pot with line???
 
 
 CountKelvin<-subset(Count_data_2023,River=="Kelvin") 
