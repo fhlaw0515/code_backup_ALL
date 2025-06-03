@@ -1,0 +1,713 @@
+####-- Libraries --####
+
+library(ggplot2)
+library(ggrepel)
+library(stringr)
+library(reshape2)
+library(dplyr)
+library(amap)
+library(clusterProfiler)
+library(org.Hs.eg.db)
+library(tidyr)
+library(tidyverse)
+library(ABSSeq)
+library(pheatmap)
+library(cowplot)
+library(grid)
+library(gridExtra)
+library(png)
+library(ggsignif)
+
+
+# Import data  
+annotations = read.table("/Path/to/annotations/file/in/csv/", header=TRUE, sep= "\t")                                 
+em = read.table("/Path/to/expression/matrix/", header=TRUE, row.names =1, sep= "\t")
+sample_sheet= read.table("/Path/to/sample/sheet/", header=TRUE, sep= "\t")
+de_icm_vs_cnt = read.table("/Path/to/differential/expression/table/", row.names=1, header=TRUE, sep= "\t")
+
+
+####-- Step 1: Make sure all gene symbol names was correctly spelled/ entered in the annotations file --####
+
+# dataframe preparation before mapping
+rownames(annotations) <- annotations$ID
+annotations_ensbl <- rownames(annotations)
+
+
+# map ensembl to symbol and set ensembl as rownames
+annotations_symbol = bitr(annotations_ensbl, fromType = "ENSEMBL", toType = "SYMBOL", OrgDb = org.Hs.eg.db)
+annotations_symbol <- annotations_symbol[!duplicated(annotations_symbol$ENSEMBL),]
+row.names(annotations_symbol) <- annotations_symbol$ENSEMBL
+
+
+# update the annotation table if the gene has a mapped symbol
+annotations$has_symbol <- annotations_ensbl %in% annotations_symbol$ENSEMBL
+
+for (row in 1:nrow(annotations)) { 
+  if (annotations[row, 6] == TRUE) { 
+    match_row <- match(annotations[row, 1], annotations_symbol[, 1])
+    
+    if (!is.na(match_row)) {
+      gene_interested <- annotations_symbol[match_row, ]$SYMBOL
+      annotations$symbol[row] <- gene_interested
+    }
+  }
+}
+
+
+####-- Step 2: create a new column in annotation file known for the entrezid id --####
+
+
+# map ensembl to entrezid
+annotations_entrez = bitr(annotations_ensbl, fromType = "ENSEMBL", toType = "ENTREZID", OrgDb = org.Hs.eg.db)
+
+
+# update the annotations table of genes that were mapped from ensembl to entrezid
+annotations$has_entrez <- annotations_ensbl %in% annotations_entrez$ENSEMBL
+annotations$entrez <- c(NA)
+
+for (row in 1:nrow(annotations)) { 
+  if (annotations[row, 7] == TRUE) { 
+    match_ensembl <- match(annotations[row, 1], annotations_entrez[, 1])
+    
+    if (!is.na(match_ensembl)) {
+      entrezid_interested <- annotations_entrez[match_ensembl, ]$ENTREZID
+      annotations$entrez[row] <- entrezid_interested
+    }
+  }
+}
+
+
+# for the unmapped genes, map symbol to entrezid 
+annotations_unmapped <- annotations[annotations$has_symbol == FALSE & annotations$has_entrez == FALSE,]$symbol
+annotations_unmapped_entrez = bitr(annotations_unmapped, fromType = "SYMBOL", toType = "ENTREZID", OrgDb = org.Hs.eg.db)
+
+
+# update the annotations table of genes that were mapped from symbol to entrezid
+
+for (row in 1:nrow(annotations)) { 
+  if (annotations[row, 7] == FALSE) { 
+    match_symbol <- match(annotations[row, 2], annotations_unmapped_entrez$SYMBOL)
+    entrez_interested <- annotations_unmapped_entrez[match_symbol,]$ENTREZID
+    annotations$entrez[row] <- entrez_interested
+  }
+}
+
+
+for (row in 1:nrow(annotations)) 
+{
+  if (!is.na(annotations[row,]$entrez)) 
+  { 
+    annotations[row,7] <- TRUE}
+}
+
+
+
+
+# Save
+write.table(annotations, file="/Path/to/file/annotations_updated/", sep="\t")
+
+
+
+####-- Step 3: Combine the EM, DE, and annotations file into a master dataframe --####
+
+
+# Create master
+master = merge(em, annotations, by.x=0, by.y=0)  #
+master = merge(master, de_icm_vs_cnt, by.x=1, by.y=0) 
+names(master)[1] = "Emsembl_ID"
+
+
+duplicated_rows <- master[duplicated(master$symbol) | duplicated(master$symbol, fromLast = TRUE), ]
+master$symbol[duplicated(master$symbol) | duplicated(master$symbol, fromLast = TRUE)] <- paste(duplicated_rows$symbol, duplicated_rows$chromosome, sep = "_")
+# del column 25 coz it is repeated ensembl ID
+master <- master[,c(1:24,26:35)]
+
+# make the gene symbol become the row name
+row.names(master) = master[,25] 
+
+# Exclude the entrezid id column before omitting NA in the whole dataframe
+# As there were rows with no NA in other column but only NA in entrezid
+
+
+# Save the table for Step 11 ORA use, before we exclude the column of entrez ID
+write.table(master, file="/Path/to/master_with_entrez/", sep="\t")
+
+# Exclude entrez ID column
+master <- master[,c(1:30,32:34)]
+
+# Omit NA
+master = na.omit(master) 
+master = master[order(master[,33], decreasing=FALSE),] 
+
+
+####-- Step 4: Prepare dataframe with mean of expression, minus log10p, and group of sig_up, sig_down, no sig column for Volcano and MA plot --####
+master$mean_of_expression = rowMeans(master[,2:24]) # Make a new column in master table for mean expression
+master$mlog10p = -log10(master$p.adj) # Add a column for -log10p to the master table.
+master$sig<- as.factor(master$p.adj < 0.05 & abs(master$log2fold) > 1.0) # Add a column flagging significance (T/F)
+
+write.table(master,file="/Path/to/master/", sep="\t") 
+
+
+####-- Step 5: Prepare dataframe for heatmap and boxplot use! --####
+# Create a new EM table with scaled expresion values and gene names as row names, for heatmap and boxplot use!
+em_symbols = master[,2:24] 
+em_scaled <- scale(data.frame(t(em_symbols))) 
+em_scaled <- data.frame(t(em_scaled)) 
+em_scaled = na.omit(em_scaled)
+
+
+# Save
+write.table(em_symbols, file="/Path/to/em_symbols/", sep="\t") 
+write.table(em_scaled, file="/Path/to/em_scaled/", sep="\t") 
+
+
+####-- Step 6: Density plot -####
+# dataframe preparation
+
+# add a column called gene, then melt the table 
+gene <- rownames(em_symbols)
+em_symbols$gene <- gene
+em_symbols.m = melt(em_symbols)
+
+# create a groups column - so we can colour the plot
+rows = nrow(em_symbols)
+groups = c(rep(rep("control", rows),10), rep (rep("ischemic", rows),13))
+em_symbols.m$groups = groups
+
+density = ggplot(em_symbols.m, aes(x = log10(value + 0.01), fill = groups)) +
+  geom_density(alpha = 0.75, color = "lightgray") +  # Set color to NA to remove edge lines
+  scale_fill_manual(values = c("#619CFF", "#F8766D")) +
+  scale_x_continuous(limits = c(NA, 4.5)) +  # Set the maximum value on the x-axis to 4.5
+  facet_wrap(~variable, ncol = 5) +
+  theme(
+    axis.text.x = element_text(size = 15, margin = margin(t = 5), hjust = 0, vjust = 1, family = "Arial", face = "bold", colour = "black"),
+    axis.text.y = element_text(size = 15, margin = margin(r = 5), hjust = 1, vjust = 0.5, family = "Arial", face = "bold", colour = "black"),
+    axis.title.x = element_text(size = 16, margin = margin(t = 10), hjust = 0.5, vjust = 1, family = "Arial", face = "bold"),
+    axis.title.y = element_text(size = 16, margin = margin(r = 10), angle = 90, hjust = 0.5, vjust = 0.5, family = "Arial", face = "bold"),
+    legend.text = element_text(size = 16, family = "Arial", face = "bold"),
+    legend.title = element_blank(),
+    legend.key.size = unit(1, "line"),
+    plot.margin = unit(c(0.4, 0.4, 0.4, 0.4), "cm"),
+    panel.background = element_rect(fill = "transparent"),  # Remove background color
+    panel.grid = element_blank(),  # Remove grid lines
+    strip.text = element_blank(),  # Remove facet titles
+    panel.border = element_rect(colour = "black", fill=NA, size=1),
+    legend.position = "bottom",
+    aspect.ratio = 0.7
+  ) +
+  labs(x = expression(paste("log"[10], "expression")), y = "Density") 
+
+density
+
+png("Path/to/density/plot/png/", height = 400, width = 400)
+print(density)
+dev.off()
+
+####-- Step 7: MA plot -####
+# Dataframe preparation create a column named direction
+
+# Split master into sig up, sig down and non-sig
+master_sig_up = subset(master, p.adj < 0.05 & log2fold > 1)
+master_sig_down = subset(master, p.adj < 0.05 & log2fold < -1)
+master_non_sig = subset(master, p.adj > 0.05 | (log2fold < 1 & log2fold > -1) )
+
+# order and create table so that we can label top 5
+master_sig_up = master_sig_up[ order( master_sig_up[,31], decreasing=FALSE )	,] # Sort the table with most sig fig (lowest p) on top
+master_sig_down = master_sig_down[ order( master_sig_down[,31], decreasing=FALSE ) ,]
+
+master_sig_up_top5 = master_sig_up[1:5,] # Create a table with only the top 5 sig. fig gene
+master_sig_down_top5 = master_sig_down[1:5,]
+
+
+# add shared column and assign fixed values
+master_non_sig $direction = "a"
+master_sig_up$direction = "b"
+master_sig_down $direction = "c"
+
+
+# rejoin
+master = rbind(master_non_sig, master_sig_up, master_sig_down)
+
+write.table(master,file="Path/to/master/", sep="\t") 
+
+
+####
+# create custom theme
+my_theme = theme(
+  panel.grid = element_blank(),
+  panel.background = element_blank(),
+  panel.border = element_rect(colour = "black", fill=NA, size=1),
+  plot.background = element_blank(),
+  legend.background = element_rect(fill = "transparent", colour = NA),
+  legend.key = element_rect(fill = "transparent", colour = NA),
+  plot.title = element_text(size=15, margin = margin( b = 5), hjust=0.5,vjust=0.5),
+  title = element_text(size=16, margin = margin( b = 5), hjust=0,vjust=0.5,family = "Arial", face = "bold"),
+  axis.text.x = element_text(size=15, margin = margin( t = 5), hjust=0,vjust=1,family = "Arial", face = "bold", colour = "black"),
+  axis.text.y = element_text(size=15, margin = margin( r = 5), hjust=1,vjust=0.5,family = "Arial", face = "bold", colour = "black"),
+  axis.title.x = element_text(size=16, margin = margin( t = 10), hjust=0.5,vjust=1,family = "Arial", face = "bold"),
+  axis.title.y = element_text(size=16, margin = margin( r = 10), angle = 90, hjust=0.5,vjust=0.5,family = "Arial", face = "bold"),
+  legend.text = element_text(size=16, family = "Arial", face = "bold"),
+  legend.title = element_blank(),
+  legend.key.size = unit(1,"line"),
+  plot.margin= unit(c(0.4,0.4,0.4,0.4), "cm"),
+  strip.text.x = element_text(size = 12, family="Arial", face="bold", vjust=1),
+  panel.spacing = unit(1, "lines")
+)
+
+
+
+
+# Make a MA Plot
+MA_Plot = ggplot(master, aes(x=log10(mean_of_expression), y=log2fold,colour = direction)) + 
+  geom_point(size=1.8)+
+  scale_colour_manual(values = c("black", "#FF0000", "#0000FF"), labels=c("no change","up-regulated","down-regulated"), name = "")+        # change default colours of dots, re-order the label in legends
+  geom_hline(yintercept=1,linetype="dashed")+
+  geom_hline(yintercept=-1,linetype="dashed")+
+  labs(title="", x=expression(paste("log"[10],"(mean expression)")),y=expression(paste("log"[2], "(fold change)",)))  +
+  my_theme +
+  theme(legend.position = "bottom")
+
+MA_Plot
+
+
+png("/Path/to/MA_Plot/png/", height = 400, width = 550)
+print(MA_Plot)
+dev.off()
+
+# combine Density and MA plot into 1 single plot
+density_MA <- density + MA_Plot
+density_MA
+
+png("/Path/to/density_MA/png/", height = 400, width = 1300)
+print(density_MA)
+dev.off()
+
+
+
+####-- Step 8: PCA Plot --####
+
+# use em_scales table for PCA 
+em_scaled = master[,sample_sheet$sample]
+
+numeric_matrix = as.matrix(sapply(em_scaled, as.numeric))
+pca = prcomp(t(numeric_matrix))
+pca_coordinates = data.frame(pca$x)
+
+vars = apply(pca$x, 2, var)
+prop_x = round(vars["PC1"] / sum(vars),4) * 100
+prop_y = round(vars["PC2"] / sum(vars),4) * 100
+x_axis_label = paste("PC1 ", " (",prop_x, "%)",sep="")
+y_axis_label = paste("PC2 ", " (",prop_y, "%)",sep="")
+
+# plot the PC1 and PCA2
+PCA = ggplot(pca_coordinates, aes(x=PC1, y=PC2, colour = sample_sheet$sample_group)) + geom_point(size=5) +
+  scale_color_manual(values=c("#619CFF","#F8766D"), name="") + 
+  labs(title="", x=x_axis_label, y=y_axis_label) +
+  my_theme +
+  theme(legend.position="bottom")
+PCA
+
+png("/Path/to/PCA/png/", height = 400, width = 450)
+print(PCA)
+dev.off()
+
+
+# obtain the percentage for PC3 to PC6 for the line graphs of PCA
+prop_3 = round(vars["PC3"] / sum(vars),4) * 100    # Substitute "PC3" with "PC4", "PC5" etc and print the values
+prop_4 = round(vars["PC4"] / sum(vars),4) * 100
+prop_5 = round(vars["PC5"] / sum(vars),4) * 100    # Substitute "PC3" with "PC4", "PC5" etc and print the values
+prop_6 = round(vars["PC6"] / sum(vars),4) * 100
+
+
+# copy the value printed in console and make a vector 
+pca_variance <- data.frame(value = c(prop_x, prop_y, prop_3, prop_4, prop_5, prop_6),
+                 component = c("PC1", "PC2", "PC3","PC4","PC5","PC6"))
+pca_variance $component <- as.factor(pca_variance $component)
+pca_variance $value <- as.numeric(pca_variance $value)
+
+# PLot the line graph showing proportion explained by PC1 to PC9
+pca_line <- ggplot(pca_variance ,aes(x=component, y=value, group=1)) +
+  labs(title="", x="Principal Components", y="Proportion of variance (%)")+
+  my_theme+
+  geom_line(size=2)+
+  geom_point(color =  "brown", size =5)
+
+print(pca_line)
+
+
+png("/Path/to/PCA/line_graph/png/", height = 400, width = 450)
+print(pca_line)
+dev.off()
+
+
+
+# combine both PCA plot into 1 single plot
+pca_two_plots <- pca_line + PCA
+
+png("/Path/to/PCA/plot/combined/figure/", height = 400, width = 900)
+print(pca_two_plots)
+dev.off()
+
+
+
+####--  Step 9: Clustered heatmap of top 20 significant genes --####
+
+# Prepare dataframe for heatmap
+
+# Select the data for top 20 sig genes
+master_sig <- subset(master, master$sig==TRUE) 
+master_sig = master_sig[order(master_sig[,33], decreasing=FALSE),]
+master_deseq2_sig_top20 <- master_deseq2_sig_top[1:20,]
+sig_genes_top20 <- master_deseq2_sig_top20$symbol
+sig_genes <- master_sig$symbol   
+candidate_genes = sig_genes
+
+# Create the matrix for heatmap data
+hm.matrix = as.matrix(em_scaled[sig_genes,])
+hm.matrix <- na.omit(hm.matrix)
+
+# Set the factor levels to order ischemic above control
+sample_sheet$sample_group <- factor(sample_sheet$sample_group, levels = c("ischemic", "control"))
+
+annotation_column <- data.frame(Sample = sample_sheet$sample_group)
+rownames(annotation_column) <- sample_sheet$sample
+
+# Define colors for the annotation
+annotation_colors <- list(
+  Sample = c(control = "lightblue", ischemic = "pink"))
+
+
+
+heatmap <- pheatmap(hm.matrix, cellwidth = 17, cellheight = 4,
+         annotation_names_col = FALSE,
+         angle_col = 45,
+         annotation_colors = annotation_colors,
+         annotation_col = annotation_column, 
+         cluster_cols = FALSE,
+         main = "Clustered Heatmap of top 20 significant genes", 
+         fontsize_row = 7,
+         legend = TRUE,
+         labels_row = ifelse(rownames(hm.matrix) %in% sig_genes_top20, rownames(hm.matrix), ""))  # Annotate only specific genes
+
+
+# Save the heatmap to a file with larger resolution
+png("/Path/to/heatmap/png/", width = 600, height = 1800)
+print(heatmap)
+dev.off()
+
+
+
+#Create the legend separately
+legend_grob <- grid::legendGrob(
+  labels = names(annotation_colors$Sample), 
+  gp = gpar(fill = annotation_colors$Sample), 
+  nrow = 1, 
+  byrow = TRUE)
+
+
+# Load the heatmap image
+heatmap_img <- readPNG("/Path/to/heatmap/png/")
+
+# Create a grob for the heatmap
+heatmap_grob <- rasterGrob(heatmap_img, interpolate = TRUE)
+
+# Combine the heatmap and the legend using gridExtra
+combined_grob <- grid.arrange(heatmap_grob, legend_grob, ncol = 1, heights = c(10, 1))
+
+# Save the combined plot to a file
+png("/Path/to/heatmap/with/legend/", width = 500, height = 1100)
+grid.draw(combined_grob)
+dev.off()
+
+
+####-- Step 10: Identify the overlapping genes between our study and online disease database -####
+# The tsv file was pre-processed in python to filter and retain only the gene associated with cadiovascular system disease 
+
+# Import database file
+cardio = read.table("/Path/to/human_disease_knowledge_heart_output/a/tsv/file/", sep= "\t")
+cardio_ID <- as.vector(unique(cardio$V2))
+master_sig_vector <- master_sig$symbol
+master_sig_cardio <- master_sig[master_sig_vector %in% cardio_ID,]
+
+# Convert the gene symbol name into vector
+master_sig_cardio_vector <- master_sig_cardio$symbol
+
+# Compare the database gene vector nd our sig gene vector name to find overlap
+overlap <- intersect(master_sig_cardio_vector,sig_genes_top20)
+print(overlap)
+
+
+####- Step 11: Run ORA -####
+
+# Extract entrez ID of significant genes from the master dataframe
+master_with_entrez <- read.table("/Path/to/master_with_entrez/", sep="\t")
+master_with_entrez_sig <- subset(master_with_entrez, master_with_entrez$sig==TRUE) 
+master_with_entrez_sig = master_with_entrez_sig[order(master_with_entrez_sig[,33], decreasing=FALSE),]
+
+# Convert to vector
+master_with_entrez_sig <- master_with_entrez_sig$entrez
+  
+
+# Run the analysis
+enrich_go <- enrichGO(gene = master_with_entrez_sig, 
+                         OrgDb = org.Hs.eg.db,
+                         keyType = "ENTREZID",
+                         readable = TRUE,  
+                         ont = "BP", 
+                         pvalueCutoff = 0.05,
+                         qvalueCutoff = 0.10)
+
+
+# Convert the result object into dataframe
+enrich_go %>% data.frame
+
+# Create ORA pathway bar plot
+ora_bar <- barplot(enrich_go, showCategory=10)
+
+# Save 
+png("/Path/to/ora_bar/png/", width = 600, height = 1800)
+print(ora_bar)
+dev.off()
+
+# Create dot plot
+# dotplot(enrich_go, showCategory=10)
+# ora_go <- goplot(enrich_go, showCategory = 10)
+
+# Create network plot
+ora_cnet <- cnetplot(enrich_go, categorySize="pvalue")
+ 
+# Save 
+png("/Path/to/ora_cnet/png/", width = 600, height = 1800)
+print(ora_cnet)
+dev.off()
+
+############################################################################################################################################
+####-- Additional analysis utilized Bayesian appraoch --####
+# Part 1: Run the bayesian ABSSeq
+
+# Prepare data
+# Extract sample names from the expression matrix
+sample_names <- colnames(em)
+conditions <- ifelse(grepl("^CNT_", sample_names), "control", "ischemic")
+conditions
+# Convert conditions to factor
+conditions <- factor(conditions)
+
+
+# Convert to matrix
+counts <- as.matrix(em)
+abs_data <- ABSDataSet(counts=counts, groups=conditions)
+
+# Run ABSSeq analysis
+result <- ABSSeq(abs_data)
+
+res <- results(result, c("Amean", "Bmean", "foldChange", "pvalue", "adj.pvalue"))
+
+# Convert res to a data frame 
+res <- as.data.frame(res)
+
+# Calculate log2 fold change
+# note that my log2fold change is actually log2 fold change + 1
+res$log2foldchange <- ifelse(res$foldchange > 0, log2(res$foldchange + 1), -log2(abs(res$foldchange) + 1))
+
+sig_genes_bays <- res[res$adj.pvalue < 0.05 & 
+                        (res$log2foldchange > 0.5 | res$log2foldchange < -0.5),]
+
+sig_up_bays <- res[res$adj.pvalue < 0.05 & res$log2foldchange > 0.5,]
+sig_down_bays <- res[res$adj.pvalue < 0.05 & res$log2foldchange < -0.5,]
+no_sig_bays <- res[res$adj.pvalue > 0.05 & (res$log2foldchange < 0.5 | res$log2foldchange > -0.5), ]
+
+# Sort the sig genes master with lowest adj p (most sig. fig) at top
+sig_genes_bays = sig_genes_bays[order(sig_genes_bays[,5], decreasing=FALSE),]
+
+
+
+# Repeat Step 3 in the main analysis to combine the bayesian results with the annotations and em table
+# Save the table as master_bayesian
+write.table(master_bayesian, file="/Path/to/master_bayesian/csv/", sep="\t")
+
+
+
+# Part 2: Identify overlapping genes  between bayesian approach, deseq2 approach, and online literature (55 genes)
+#         for the venn diagram in supplementary figure
+
+# Import literature gene sets
+list = read.table("/path/to/list_literature_overlap_master/csv/", header=TRUE, sep= "\t")
+
+# Define gene sets
+bays <- rownames(sig_genes_bays)
+deseq2 <- master_sig$Emsembl_ID
+
+
+# Calculate number of overlapping and non-overlapping genes
+overlap <- intersect(bays, deseq2)
+only_bays <- length(setdiff(bays, deseq2))
+only_deseq2 <- length(setdiff(deseq2, bays))
+
+
+# Calculate overlapping gene with literature (55 genes used in the venn diagram )
+rownames(list) <- list[,1]
+list_vector <- rownames(list)
+overlap <- intersect(list_vector, deseq2)
+
+
+# Extra analysis
+# See if biomarker was significant in our study
+biomarker <- c("SERPINA3", "FCN3", "PTN", "CD163", "SCUBE2")
+
+
+#########################################################################################################################
+
+#### Code to demonstrate understanding of the plot taught in course
+
+############################################################################################################################################
+# Boxplot for the most enriched pathway with significant stars 
+
+# Part 1 dataframe preparation, extracting Genes from the most enriched pathway from ORA
+
+# Select the most enriched gene set
+gene_sets = enrich_go$geneID
+description = enrich_go$Description
+p.adj = enrich_go$p.adjust
+enrich_go_table = data.frame(Description = description, Gene_Sets = gene_sets, P_adj = p.adj)
+enriched_gene_set = as.character(enrich_go_table[1,"Gene_Sets"])
+
+# Split the genes into a vector
+candidate_genes_first = unlist(strsplit(enriched_gene_set, "/"))                    
+
+
+# Part 2: Get the scaled expression data of the above gene vector from the em.scaled
+gene_data = data.frame(t(em_scaled))
+gene_expression_filtered <- gene_data[,candidate_genes_first]
+
+# Prepare dataframe for faceting
+gene_expression_filtered.t = data.frame(t(gene_expression_filtered))
+gene_expression_filtered.t$sample_group = ss$sample_group 
+gene_expression_filtered.tm = melt(gene_expression_filtered.t, id.vars="sample_group")
+
+
+# Part 3: Create a multi-gene boxplot
+boxplot_pathway <- ggplot(gene_data_filter.m,aes(x=variable,y=value,fill=sample_group))+
+  geom_boxplot()+
+  geom_violin()+
+  my_theme+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  showSignificance(c(0.7, 9.5), -2, +0.05, "***")+
+  showSignificance(c(9.7, 18.5), -2, +0.05, "**")+
+  showSignificance(c(18.7, 30.5), -2, +0.05, "*")+
+  labs(title ="", x="Differentially expressed genes in enzyme-linked receptor protein signaling",
+       y="Z score of expression")+
+  theme(legend.position = "bottom")
+
+boxplot_pathway
+
+# Save
+png("/Path/to/boxplot_pathway/png/", height = 400, width = 600)
+print(boxplot_pathway)
+dev.off()
+
+
+############################################################################################################################################
+
+#GSEA analysis and boxplot of the most enriched pathway 
+
+# Prepare input data for GSEA
+
+# we want the log2 fold change 
+gsea_input = master$log2fold
+
+# add gene names the vector
+names(gsea_input) = row.names(master)
+
+# omit any NA values 
+gsea_input = na.omit(gsea_input)
+
+# sort the list in decreasing order (required for clusterProfiler)
+gsea_input = sort(gsea_input, decreasing = TRUE)
+
+gsea_input
+
+# Running GSEA
+gse_results = gseGO(geneList=gsea_input, 
+                    ont = "BP", 
+                    keyType = "SYMBOL", 
+                    nPerm = 10000, 
+                    minGSSize = 3, 
+                    maxGSSize = 800, 
+                    pvalueCutoff = 0.05, 
+                    verbose = TRUE, 
+                    OrgDb = org.Hs.eg.db, 
+                    pAdjustMethod = "none")
+
+
+ggp_ridge = ridgeplot(gse_results)
+ggp_ridge
+
+# Save
+png("/Path/to/ggp_ridge/png/", height = 400, width = 600)
+print(ggp_ridge)
+dev.off()
+
+
+############################################################################################################################################
+
+#### Clustered heatmap with customised annotation columns/ rug highlighting gene fucntion
+
+annotation_column <- data.frame(Sample = sample_sheet$sample_group)
+rownames(annotation_column) <- sample_sheet$sample
+
+# Create annotation data frame
+annotation <- data.frame(
+  Gene_functions = c("Lipid Metabolism", "Lipid Metabolism", NA, "Inflammation", "Cytoskeletal Remodeling",
+                     "Lipid Metabolism", "Inflammation", "Lipid Metabolism", NA, "Lipid Metabolism",
+                     NA, "Cytoskeletal Remodeling", "Cytoskeletal Remodeling", NA, "Energy Metabolism",
+                     "Lipid Metabolism", "Energy Metabolism", NA, "Lipid Metabolism", NA,
+                     NA, "Energy Metabolism", "Lipid Metabolism", "Lipid Metabolism", NA, "Energy Metabolism",
+                     "Inflammation", NA, "Cytoskeletal Remodeling", "Lipid Metabolism", NA,
+                     "Inflammation", NA, "Inflammation", "Lipid Metabolism", NA, "Inflammation",
+                     "Inflammation", "Inflammation", NA, "Inflammation", "Lipid Metabolism", "Energy Metabolism",
+                     "Lipid Metabolism", NA, "Energy Metabolism", NA, NA, "Lipid Metabolism",
+                     NA, "Lipid Metabolism", NA, "Inflammation", "Inflammation", "Cytoskeletal Remodeling", NA,
+                     NA, NA, "Lipid Metabolism", NA, "Cytoskeletal Remodeling", "Energy Metabolism",
+                     "Inflammation", NA, "Lipid Metabolism", NA)
+)
+rownames(annotation) <- c("FASN", "LDLR", "CITED2", "STAT3", "ITGA1", "ABCG1", "CX3CR1", "PLIN2", "IGF1R", "ABCG4",
+                          "TNNT3", "ITGB5", "SOS2", "UMPS", "AMPD3", "HMGCR", "RBKS", "EHHADH", "CD36", "IDH1",
+                          "HSD11B1", "PRKAB2", "SREBF2", "PPARA", "FNIP1", "PUDP", "IL2RA", "HLA-DQA2", "KALRN", "CPT1A",
+                          "ERCC6", "IKBKG", "CAT", "CD244", "HACD2", "IDNK", "PDCD1LG2", "HLA-DQA1_4", "CTLA4", "A2M",
+                          "TLR7", "ABCA1", "ENO3", "ACAT2", "SEC13", "SLC25A1", "G6PD", "ZNF708", "APOB_1", "CHMP6",
+                          "APOB_2", "PSME2", "STAT1", "HLA-DQA1z_3", "MAPK8IP1", "SLC6A12", "NDUFS8", "AKT1", "ACACB", "NAGLU",
+                          "CBL", "PFKFB1", "PTGS1", "NFS1", "SCD", "TNNT")
+
+
+
+# Define colors for the annotation
+annotation_colors <- list(
+  Sample = c(control = "lightblue", ischemic = "pink"),
+  Gene_functions = c("Cytoskeletal Remodeling" = "lightgreen", "Energy Metabolism" = "orange",
+                     "Inflammation" = "purple", "Lipid Metabolism" = "gray"))
+
+# Plot the customised heatmap
+customised_heatmap <-pheatmap(hm.matrix,
+                   cellwidth=10,
+                   cellheight=7,
+                   annotation_names_col = FALSE,
+                   annotation_names_row = FALSE,
+                   angle_col = 45,
+                   annotation_colors = annotation_colors,
+                   annotation_col = annotation_column, 
+                   annotation_row = annotation,
+                   show_colnames = FALSE,
+                   cluster_cols = FALSE,
+                   main = "Clustered Heatmap of Ischemic Related Genes (Online Database)", 
+                   fontsize_row = 8.5, 
+                   fontsize_col=8,treeheight_row=45,
+                   fontsize=8)
+
+customised_heatmap
+
+# Save
+png("/Path/to/customised_heatmap/png/)
+print(customised_heatmap)
+dev.off()
+
