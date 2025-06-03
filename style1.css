@@ -1,0 +1,89 @@
+/*
+CSS for Programming Is Easy site
+*/
+
+
+#checkbox{
+	background-color:#bed8f3;
+	padding-top:.2em;
+	padding-bottom:.2em;
+	padding-left.2em;
+}
+
+
+#navigation,#bodycontent,#header{
+	position:absolute;
+	
+}
+#navigation,#bodycontent{
+	top:120px;
+	
+}
+
+#bodycontent{
+	left:200px;
+	
+}
+
+
+#header{
+background-color: #F8F8FF;
+color:pink;
+font-weight:italic;
+width:1200px;
+height:300px;
+}
+
+
+#navigation{
+background-color: #F8F8FF;
+color:navy;
+font-weight:bold;
+width:150px;
+height:800px;
+border-top:20px soft #7da5d8;
+border-bottom:20px soft #7da5d8;
+border-left:20px soft #7da5d8;
+border-right:20px soft #7da5d8;
+}
+
+
+#tagline p{
+	font-style:italic;
+	font-family: Times,serif,Georgia;
+	background-color:#bed8f3;
+	border-top:3px solid #7da5d8;
+	border-bottom:3px solid #7da5d8;
+	padding-top:.2em;
+	padding-bottom:.2em;
+	padding-left.20em;
+}
+
+h1,h2,h3{
+	font-family:Helvetica, "Trebuchet MS",san-serif,Arial;
+}
+
+h1{
+	font-size:x-large;
+	background-color:blue;
+	color:white;
+	padding-top:.2em;
+	padding-bottom:.2em;
+	padding-left.4em;
+	
+}
+
+h2{
+	font-size:130%;
+	font-weight:normal;
+	color:navy;
+	padding-top:15px;
+	
+	
+}
+
+p{
+  font-weight:bold;
+  color:Brown;
+  
+}
