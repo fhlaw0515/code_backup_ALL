@@ -1,3 +1,7 @@
+# code submitted for Bioinformatics course project
+# create faceted boxplot, density plot, MA plot, Volcano plot, customised heatmap, perform pca, pathway analysis (ORA, GSEA) with a given DESeq2 dataset
+# used ABSSeq bayesian approach as further analysis, identified overlapped genes with published disease database and papers
+
 ####-- Libraries --####
 
 library(ggplot2)
