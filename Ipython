@@ -1,4 +1,4 @@
-# make a quiz
+# make a MC quiz
 
 from IPython.display import HTML
 
