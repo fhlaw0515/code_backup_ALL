@@ -1,4 +1,4 @@
-# messy code, not finished
+# code for memory test
 
 
 from PIL import Image
@@ -16,9 +16,7 @@ base_folder = r"/Current/Directory/"
 
 # Current experiment settings chose 10 categories of images as default, but its number can be adjusted in the future
 category_folders = [
-    "Birds01", "Cars02", "Clothes03", "Fish08", "Flowers04", "Fruit05", 
-    "Land Animals00", "Musical Instruments06", "Nuts07", "Writing Material09"
-]
+    "Birds", "Cars", ..., "Fruit", ]
 
 available_images_per_category = {}
 training_blocks = []
