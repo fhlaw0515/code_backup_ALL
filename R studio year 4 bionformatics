@@ -1,4 +1,4 @@
-# submitted code for Bioinformatics course project
+# code submitted for Bioinformatics course project
 # create faceted boxplot, density plot, MA plot, Volcano plot, customised heatmap, perform pca, pathway analysis (ORA, GSEA) with a given DESeq2 dataset
 # used ABSSeq bayesian approach as further analysis, identified overlapped genes with published disease database and papers, checked if proposed biomarkers were sig fig
 # step 1 and 2 might not be applicable in other dataset, unless some gene names were also mispelled, and that you want to reduce thepercentage of unmapped genes (symbol/ensembl to entrezid) before ORA)
