@@ -1,6 +1,7 @@
 #### incorporate python script to print stored variables in html ####
 # simulate the launching of a rocket
 # the html sentences colour changes for every sentence
+# the second part of code is to create a MCQ
 
 import IPython
 import math
