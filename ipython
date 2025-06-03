@@ -1,0 +1,141 @@
+#### incorporate python script to print stored variables in html ####
+# simulate the launching of a rocket
+# the html sentences colour changes for every sentence
+
+import IPython
+import math
+import utils.lunar_ipycanvas as lunar
+import math
+from IPython.display import HTML
+
+
+def rocket_fn(distance_to_surface, velocity):
+    if velocity >(math.sqrt(distance_to_surface)+0.999):
+        thrust = True
+    else:
+        thrust = False        
+    return thrust
+
+lander = lunar.simulate(rocket_fn)
+
+NewList = (str(lander)).split(sep="\n")
+Dict = {}
+
+def function():
+    message = ""
+    color=['red','FF7F00','FFEA17','green','blue','4B0082','9400D3','red','orange','FFEA17','green','blue','4B0082','9400D3','red','FF7F00']
+    for i in range (16):
+        Piece = str(NewList[i]).split(sep="=")
+        try: 
+            Piece[1]=round(float(str(Piece[1])),3)
+            Dict[Piece[0]]=Piece[1]
+            message = message + f"<font color = {color[i]}><br>The {Piece[0]} of the lander is {Piece[1]}<font>"
+            print(Piece)
+        except:
+            Dict[Piece[0]]=Piece[1]
+            message = message + f"<font color = {color[i]}><br>The {Piece[0]} of the lander is {Piece[1]}.<font>"
+            print(Piece,"unable to cast")
+    return(message)
+
+HTML(f"<p1><font color='blue'><center> <strong>Here is the information:</strong>{function()}.<center></font></p1>")
+
+
+
+#### make a MC quiz with iPython ####
+
+
+from IPython.display import HTML
+
+
+class Question:
+    total_question = 0
+    
+    def __init__(self,number,title,optionA,optionB,optionC,answer,user_ans):
+        self.number = number
+        self.title = title
+        self.optionA = optionA
+        self.optionB = optionB
+        self.optionC = optionC     
+        self.answer = answer
+        self.user_ans = user_ans
+        Question.total_question +=1
+    
+    def ans_is(self):
+        return f'the answer is{self.user_ans}'            
+        
+    def __str__(self):
+        return f"<br>Question{self.number}<br>{self.title}<br><button id='ButtonA' type='button'>A: {self.optionA}</button><br><button id='ButtonB' type='button'>B: {self.optionB}</button><br><button id='ButtonC' type='button'>C: {self.optionC}</button><br>"
+    
+q1 = Question("1","What time is it?","0900","0356","1800","C","")
+q2 = Question("2","What do you like?","cheese","chocolate","piano","A","")
+q3 = Question("3","What do you like?","cheese","chocolate","piano","A","")
+q4 = Question("4","What do you like?","cheese","chocolate","piano","A","")
+q5 = Question("5","What do you like?","cheese","chocolate","piano","A","")
+q6 = Question("6","What do you like?","cheese","chocolate","piano","A","")
+    
+
+def myFunctionA():
+    document.getElementById("ButtonA").style.backgroundColor = 'green'
+    self.user_ans = "A"
+def myFunctionB():
+    document.getElementById("ButtonB").style.backgroundColor = 'green'
+    self.user_ans = "B"
+    
+def myFunctionC():
+    document.getElementById("ButtonC").style.backgroundColor = 'green'
+    self.user_ans = "C"
+    
+#title,optionA,optionB,optionC,answer,
+#this.title = title
+       # this.optionA = optionA
+       # this.optionB = optionB
+       # this.optionC = optionC     
+       # this.answer = answer
+        #     f'<p2>{q2.__str__()}</p2>'
+
+q2.__str__()
+
+        
+HTML(f'<p1 id="question">{q1.__str__()}</p1><div id="myDIV"><p2 id="question2">{q2.__str__()}</p2><p3 id="question3">{q3.__str__()}</p3><p4 id="question4">{q4.__str__()}</p4><p5 id="question5">{q5.__str__()}</p5></div>'
+     
+     '''
+     <br><button onclick="myFun()">Click to hide question</button>
+     <style>
+     #myDIV {
+     width: 100%;
+     padding: 50px 0;
+     text-align: center;
+     background-color: lightblue;
+     margin-top: 20px;
+     }</style>
+
+     
+     <script>document.getElementById("ButtonA").addEventListener("click", myFunctionA)</script>
+     <script>document.getElementById("ButtonB").addEventListener("click", myFunctionB)</script>
+     <script>document.getElementById("ButtonC").addEventListener("click", myFunctionC)</script>
+     <script>
+     function myFunctionA(){document.getElementById('ButtonA').style.backgroundColor = "green"
+     myFunctionD()
+     }</script>
+     <script>function myFunctionB() {document.getElementById("ButtonB").style.backgroundColor = "green"
+     }</script>
+     <script>function myFunctionC() {document.getElementById("ButtonC").style.backgroundColor = "green"
+     }</script>
+     <script>function myFunctionD(){document.getElementById("question2").innerHTML={q2.__str__()}
+     }</script>
+     <script>
+     function myFun() {var x = document.getElementById("myDIV");
+     if (x.style.display === "none") 
+         {x.style.display = "block";
+         } 
+     else {x.style.display = "none";
+     }
+     }</script>
+     ''')
+     
+     
+#unction Question(number,user_ans){this.number = number;this.user_ans = user_ans}this.getName = function(){return f"Question + this.number + this.user_ans"}const Question1 = new Question(1,"");import java.util.Dictionary;import java.util.Enumeration;import java.util.Hashtable;public class Dict {public static void main(String[] args) { Dictionary dictionary = new Hashtable(); dictionary.put("",""); 
+
+
+
+
