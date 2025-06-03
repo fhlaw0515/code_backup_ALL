@@ -1,3 +1,5 @@
+# incorporate python script to print stored variables in html
+
 import IPython
 import math
 import utils.lunar_ipycanvas as lunar
