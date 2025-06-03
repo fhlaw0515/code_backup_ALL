@@ -1,6 +1,13 @@
 # submitted code for Bioinformatics course project
 # create faceted boxplot, density plot, MA plot, Volcano plot, customised heatmap, perform pca, pathway analysis (ORA, GSEA) with a given DESeq2 dataset
-# used ABSSeq bayesian approach as further analysis, identified overlapped genes with published disease database and papers
+# used ABSSeq bayesian approach as further analysis, identified overlapped genes with published disease database and papers, checked if proposed biomarkers were sig fig
+# step 1 and 2 might not be applicable in other dataset, unless some gene names were also mispelled, and that you want to reduce thepercentage of unmapped genes (symbol/ensembl to entrezid) before ORA)
+
+# useful code
+# line 240-261 custom theme for plot
+# line 594-612 adding significant stars in boxplot
+# line 549-552 intersect(), length(), unique() useful functions to identify number of overlapped genes and their identity for venn diagram
+# load image from laptop to R studio can use readPNG("/Path/to/png/") 
 
 ####-- Libraries --####
 
@@ -492,7 +499,14 @@ dev.off()
 # Prepare data
 # Extract sample names from the expression matrix
 sample_names <- colnames(em)
-conditions <- ifelse(grepl("^CNT_", sample_names), "control", "ischemic")
+conditions <- ifelse(grepl("^CNT_", sample_names), "control", "ischemic") 
+
+# grepl("^CNT_", sample_names) checks each element in the sample_names vector to see if it starts with "CNT_", 
+# the symbol ^ means "start of the string", 
+# it returns a logical vector
+# ifelse(..., "control", "ischemic") assigns "control" if the sample name starts with "CNT_", 
+# otherwise "ischemic" 
+
 conditions
 # Convert conditions to factor
 conditions <- factor(conditions)
