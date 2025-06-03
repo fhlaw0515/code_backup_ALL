@@ -1,0 +1,742 @@
+# messy code, not finished
+
+
+from PIL import Image
+import os
+import random
+from psychopy import visual, event, core, gui 
+
+
+
+win = visual.Window(size=(800, 600), fullscr=False) 
+
+# === Setup Experiment Parameters and Global Variables ===
+base_folder = r"/Current/Directory/"
+# print(f"Base folder path set to: {base_folder}") # Debugging line
+
+# Current experiment settings chose 10 categories of images as default, but its number can be adjusted in the future
+category_folders = [
+    "Birds01", "Cars02", "Clothes03", "Fish08", "Flowers04", "Fruit05", 
+    "Land Animals00", "Musical Instruments06", "Nuts07", "Writing Material09"
+]
+
+available_images_per_category = {}
+training_blocks = []
+selected_categories = []
+
+######## Helper function ########
+# Resize image to reduce memory load of laptop
+def resize_image(image_path, output_path, size=(800, 800)):
+    """Resize an image to the specified size and save it."""
+    with Image.open(image_path) as img:
+        img.thumbnail(size)  # Resize while maintaining aspect ratio
+        img.save(output_path)
+
+# Define a function to check for the escape key globally
+def check_for_escape():
+    keys = event.getKeys(keyList=['escape'])
+    if 'escape' in keys:
+        print("Escape key pressed. Exiting program.")
+        core.quit()
+
+def get_user_input():
+    user_input = gui.Dlg(title="Experiment Setup")
+    user_input.addField("Enter the number of images to memorize (1-10):", 10) # Default is 10 in this project, can be adjusted
+    user_input.addField("Enter the number of training blocks (1-10):", 10) # Default is 10 in this project, can be adjusted
+    user_input.show()
+    if user_input.OK:
+        num_categories = int(user_input.data[0])
+        num_blocks = int(user_input.data[1])
+        # print(f"User Input - Number of Images: {num_categories}, Number of Blocks: {num_blocks}")  # Debugging line
+
+        # Additional input validation
+        if not (1 <= num_categories <= 10):
+            print("Error: Number of images must be between 1 and 10.")
+            core.quit()
+        if not (1 <= num_blocks <= 10):
+            print("Error: Number of blocks must be between 1 and 10.")
+            core.quit()
+
+    return num_categories, num_blocks 
+
+# A function to select the categories folders randomly accordng to the user input of 'num_categories'
+def select_categories(num_categories):
+    return random.sample(category_folders, num_categories)
+    
+# Function to get images from a category folder
+def get_images_from_category(category_name):
+    # Joing the path of base_folder and category name to create a path to locate the category folder
+    category_path = os.path.join(base_folder, category_name) 
+
+    # Use the function 'listdir()' of the 'os' module to create a list of file containing in the directory of the category folder
+    # For every file in the list, if the file is an image, we join the category path and the image file name to create a full path for the specific image
+    # Then store the full path to the new list created called 'all_images' and check whether next file is an image until all file inside the list was checked
+
+    all_images = [os.path.join(category_path, file) for file in os.listdir(category_path) if file.endswith(('.png', '.jpg', '.jpeg'))] 
+    # print(f"All images in {category_name}: {all_images}") # Debugging line to print the catetory name and the list of full path of all image in the category folder    
+
+    if not os.path.isdir(category_path):
+        # print(f"Error: Category path {category_path} does not exist.") # Debugging line to check whether the path of the category is indeed a directory
+        core.quit()
+    # Create an empty list to hold the paths of resized images in the future
+    resized_images = []  
+
+    # Run through all the image path of the list called 'all_images' which contains all full path of all images in the chosen category folder
+    # For every image path
+    for path in all_images:
+        # Create a new path for resized images
+        # os.path.splitext() can split the path into two parts (the root Cars02 and its extention .jpg), then store these in a tuple (Car02, .jpg)
+        # The extract the first element (the category name), concatenate it with another string called '_resized.jpg', and assign the product to a variable called 'resized_path'
+        resized_path = os.path.splitext(path)[0] + '_resized.jpg'  # Save as a new file with '_resized' suffix
+        
+        # Resize the image and save it
+        resize_image(path, resized_path, size=(800, 800))  # Resize the image
+        
+        # Add the resized image path to the list
+        resized_images.append(resized_path)
+
+    return resized_images
+
+    return all_images
+
+
+# Function to generate a specified number of random adjacent sequences
+def generate_random_sequences(categories, num_sequences, sequence_length=6):
+    num_categories = len(categories)
+    sequences = []
+    for _ in range(num_sequences):
+        # Randomly choose a starting index
+        start_index = random.randint(0, num_categories - 1)
+        # Create a sequence of `sequence_length` items starting from the random index
+        sequence = [categories[(start_index + j) % num_categories] for j in range(sequence_length)]
+        sequences.append(sequence)
+    return sequences
+
+# Function to save sequences to a text file
+def save_sequences_to_file(sequences, filename):
+    with open(filename, "w") as file:
+        for idx, seq in enumerate(sequences, start=1):
+            # Convert the sequence of indices to the actual category names
+            file.write(f"Sequence {idx}: {', '.join(seq)}\n")
+
+# Testing phase function with random answer positions and correct answer highlighting
+def presentImagePairs(win, block, block_number):
+    num_images = len(block)  # Number of images in the current block
+    used_indices = set()  # To track used indices in the current block
+    for trial in range(num_images):
+        check_for_escape()
+
+        # Calculate the indices for the images to be shown
+        if block_number <= 2:
+            # Use the same rules for Block 1 and 2
+            current_image_index = trial % num_images
+            next_image_index = (current_image_index + 1) % num_images  # Next image index
+        else:
+            # For Block 3 and onwards, select a random image for the leftmost image
+            current_image_index = random.randint(0, num_images - 1)
+            while current_image_index in used_indices:
+                current_image_index = random.randint(0, num_images - 1)
+            used_indices.add(current_image_index)  # Mark this index as used
+        next_image_index = (current_image_index + 1) % num_images  # Next image index
+        answer_image_indices = [(next_image_index + i) % num_images for i in range(1, 4)]  # 3 answer choices
+
+        # Get the images for the left and center display
+        left_image = os.path.join(base_folder, block[current_image_index][1])  # Current image path
+        center_image = os.path.join(base_folder, block[next_image_index][1])  # Next image path
+        answer_images = [os.path.join(base_folder, block[i][1]) for i in answer_image_indices]  # Get image file paths for answers
+        
+        # Randomize positions of the answer images
+        answer_positions = [(0.5, 0.3), (0.5, 0), (0.5, -0.3)]
+        random.shuffle(answer_positions)
+
+        # Determine the correct answer (the one that matches the center image)
+        correct_answer_index = 0  # First answer is the correct one
+        correct_image = answer_images[correct_answer_index]  # Correct image file path
+
+        # Create ImageStim objects for display
+        left_image_stim = visual.ImageStim(win, image=left_image, pos=(-0.5, 0), size=(0.5, 0.5))  # Left position
+        center_image_stim = visual.ImageStim(win, image=center_image, pos=(0, 0), size=(0.5, 0.5))  # Center position
+        right_image_stims = [
+            visual.ImageStim(win, image=ans_img, pos=answer_positions[i], size=(0.3, 0.3)) 
+            for i, ans_img in enumerate(answer_images)
+        ]  # Right side, randomly arranged
+
+        # Draw all images
+        left_image_stim.draw()     # Draw left image
+        center_image_stim.draw()   # Draw center image
+        for img_stim in right_image_stims:  # Draw answer images
+            img_stim.draw()
+        
+        win.flip()  # Display all the drawn stimuli
+
+        # Wait for a mouse click and determine which image was clicked
+        mouse = event.Mouse(win=win)
+        clicked = False
+        while not clicked:
+            check_for_escape()
+            if mouse.getPressed()[0]:  # Left mouse button pressed
+                clicked = True
+                for i, img_stim in enumerate(right_image_stims):
+                    if mouse.isPressedIn(img_stim):
+                        clicked_index = i
+                        break
+
+        # Now, highlight the correct answer by drawing a rectangle around it
+        correct_stim = right_image_stims[correct_answer_index]
+
+        # Redraw all images to ensure they stay visible
+        left_image_stim.draw()
+        center_image_stim.draw()
+        for img_stim in right_image_stims:
+            img_stim.draw()
+
+        # Draw the rectangle around the correct answer
+        rect = visual.Rect(win, width=0.35, height=0.35, lineColor='red', pos=correct_stim.pos, lineWidth=4)
+        rect.draw()
+
+        # Flip the window to display the images and the rectangle
+        win.flip()
+
+        # Wait for 1 second to show the highlighted answer
+        #core.wait(0.1)
+
+        # Clear the window after displaying the images
+        win.flip()
+
+
+########
+
+for block_number, block in enumerate(training_blocks):
+    presentImagePairs(win, block, block_number)  # Pass block_number
+        
+# === Main Experiment Flow ===
+def Day_1(win):
+    global selected_categories, available_images_per_category, training_blocks
+
+    # Get User Input
+    num_categories, num_blocks = get_user_input()
+    
+    # Select Categories and Load Images
+    selected_categories = select_categories(num_categories)
+
+    # Save the selected categories in the chosen order to a file
+    with open("selected_category_order.txt", "w") as file:
+        file.write("Order of Selected Categories:\n")
+        for i, category in enumerate(selected_categories, 1):
+            file.write(f"{i}: {category}\n")
+    
+    
+
+
+    # Create training blocks
+    training_blocks = []
+    for block_number in range(num_blocks):
+        block = []
+        available_images_per_category = {}
+        for category in selected_categories:
+            check_for_escape()  
+            images = get_images_from_category(category)  # Get the images for the category
+            print(f"Retrieved {len(images)} images from category '{category}': {images}")
+            available_images_per_category[category] = images  # Add to the dictionary
+
+
+        for category in selected_categories:
+
+            # Get the available images for this category
+            images_in_category = available_images_per_category[category]
+
+            # If we run out of images for this category, print a warning and exit
+            if len(images_in_category) < 1:
+                print(f"Ran out of images in category {category}. Exiting.")
+                core.quit()
+            
+            # Select a random image from the available images
+            selected_image = random.choice(images_in_category)  # Select a random image
+            
+            images_in_category.remove(selected_image)  # Remove the selected image from the list
+            
+            # Add the selected image to the block
+            block.append((category, selected_image))
+
+        training_blocks.append(block)
+        print(f"Training Block {block_number + 1} contents: {block}") 
+    
+ 
+
+    for block_number, block in enumerate(training_blocks):
+        presentImagePairs(win, block, block_number)  
+        #Pass the block and block_number
+    print('I think I finished day 1')
+
+
+
+# Load selected categories from the text file
+def load_selected_categories(filename):
+    with open(filename, "r") as file:
+        lines = file.readlines()
+    # Skip the first line and return the rest as a list
+    return [line.strip().split(": ")[1] for line in lines[1:]]
+
+
+
+
+
+
+
+###### Day 2
+
+# Define function first
+
+def get_next_images(current_index, num_categories):
+    # Modulus to loop back after reaching the end
+    return [(current_index + i) % num_categories for i in range(3)]
+
+
+    
+def load_sequences(file_path):
+    sequences = []
+    with open(file_path, 'r') as file:
+        for line in file:
+            # Strip the line of whitespace and remove the prefix "Sequence n: "
+            cleaned_line = line.split(': ', 1)[-1].strip()  # Take everything after the colon
+            if cleaned_line:  # Ensure the line isn't empty
+                sequence = cleaned_line.split(', ')  # Split the sequence into a list
+                sequences.append(sequence)  # Add to the list of sequences
+    return sequences
+
+
+##### These are the functions for the memory test for non-overlapping questions
+
+# Generate adjacent pairs based on the selected images
+def generate_adjacent_pairs(sequence_images):
+    sequenceImagePairs = []
+    for i in range(len(sequence_images) - 1):
+        sequenceImagePair1 = (sequence_images[i],sequence_images [i + 1])
+        sequenceImagePair2 = (sequence_images[i + 1], sequence_images[i])
+        print(f"Direction 1 in generated adjacent pair (before removal): {sequenceImagePair1}")  # Debugging line
+        print(f"Direction 2 in generated adjacent pair (before removal): {sequenceImagePair2}")  
+        
+        sequenceImagePairs.append(sequenceImagePair1)
+        sequenceImagePairs.append(sequenceImagePair2)
+        
+    print(f"Generated adjacent pair (before removal): {sequenceImagePairs}")  # Debugging line
+    return sequenceImagePairs
+    
+
+# Remove the first and last pair since they use the edge images
+def remove_first_and_last_number(sequenceImagePairs):
+    # Ensure we only remove pairs if they exist
+    if len(sequenceImagePairs) > 2:
+        del sequenceImagePairs[0]  
+        # Remove the first pair
+        del sequenceImagePairs[-1]  
+        # Remove the last pair
+    print(f"Adjacent pairs after removing first and last: {sequenceImagePairs}")  # Debugging line
+    return sequenceImagePairs
+
+
+
+
+# Generate the order of target-response pairs with the constraints
+def order_of_the_target_response_pairs(adjacentPairs):
+    list_of_selected_pairs = []
+    set_of_used_images = set()
+    # Ensure we have at least some pairs to choose from after removal
+    if len(adjacentPairs) < 1:
+        print("No valid adjacent pairs available after removal.")
+        return list_of_selected_pairs
+
+    
+    while adjacentPairs:
+        list_of_valid_pairs = [
+            pair  for pair in adjacentPairs
+            if pair[0] not in set_of_used_images and pair[1] not in set_of_used_images
+        ]
+        print(f"Valid pairs available: {list_of_valid_pairs}") 
+            
+        if not list_of_valid_pairs:
+            print("No valid pairs left to choose from.")
+            break
+            
+        chosen_pair = random.choice(list_of_valid_pairs)
+        list_of_selected_pairs.append(chosen_pair)
+        set_of_used_images.update(chosen_pair)
+        
+        adjacentPairs.remove(chosen_pair)
+        print(f"Selected pairs: {list_of_selected_pairs}")  # Debugging line
+    return list_of_selected_pairs
+
+####### First create a function to loop through each sequence
+####### In each sequence, in each category (within the sequence), 
+#########  we randomly select one image from the category folder
+######## then we go out of the category loop
+######## now we are still under the sequence loop
+######## and we can show the image of the sequence one by one
+####### then we do a memory test
+####### then we move on to the next sequence
+######## and repeat (in this sequence we select image first)
+
+def determine_correct_answer(target, response, selected_categories):
+    target_category = extract_category(target)
+    response_category = extract_category(response)
+    target_index = selected_categories.index(target_category)
+    response_index = selected_categories.index(response_category)
+    return 'right' if target_index < response_index else 'left'
+
+def store_reaction_time(forwards_dict, backwards_dict, target, response, reaction_time, selected_categories):
+    correct_answer = determine_correct_answer(target, response, selected_categories)
+    target_category = extract_category(target)
+    if correct_answer == 'left':
+        backwards_dict[target_category] = reaction_time
+    else:
+        forwards_dict[target_category] = reaction_time
+    print(f"Stored reaction time {reaction_time} for {target} in {'backwards_dict' if correct_answer == 'left' else 'forwards_dict'}")
+
+
+
+def presentImagePairsDay2(win, All_sequence, selected_categories, forwards_dict, backwards_dict):
+    global adjacent_pairs_per_sequence
+    sequence_index = 1
+    check_for_escape()  
+
+    # Iterate through each sequence
+    for sequence in All_sequence:
+        check_for_escape()  
+        # Update instruction text
+        instruction_text = (
+            f"Sequence {sequence_index}: Please remember the order of the images shown.\n"
+                "We will first show them one by one in order.\n\n"
+        )  
+        instructions = visual.TextStim(win, text=instruction_text, wrapWidth=1.5, height=0.05)
+        instructions.draw()
+        win.flip()
+    
+
+        event.waitKeys()  
+    
+        Sequence_Images = []
+        Sequence_Images_Path_Only = []
+        available_images_per_category_Day_2 = {}  
+
+        # Show each image in the sequence one by one
+        for category in sequence:
+            check_for_escape() 
+            imagesDay2 = get_images_from_category(category)  # Get the resized images for the category
+            print(f"Retrieved {len(imagesDay2)} images from category '{category}': {imagesDay2}")
+            available_images_per_category_Day_2[category] = imagesDay2  # Add to the dictionary
+                
+            # Get the available images for this category
+            images_in_category_Day_2 = available_images_per_category_Day_2[category]
+                    
+            # If we run out of images for this category, print a warning and exit
+            if len(images_in_category_Day_2) < 1:
+                print(f"Day 2 Ran out of images in category {category}. Exiting.")
+                core.quit()
+            
+            # Select a random image from the available images
+            selected_image_Day_2 = random.choice(images_in_category_Day_2)  # Select a random image
+            
+            images_in_category_Day_2.remove(selected_image_Day_2)   
+                
+            # Add the selected image to the block
+            Sequence_Images.append((category, selected_image_Day_2))
+
+        # Ensure we have selected images to present
+        if not Sequence_Images:
+            print("No images were selected. Exiting.")
+            core.quit()
+                
+      
+        for category, image_file_Day_2 in Sequence_Images:  # Iterate through all selected images
+            print(f"Category: {category}, Image File: {image_file_Day_2}")
+            
+            image_path = image_file_Day_2
+            
+            # Create PsychoPy ImageStim for the image
+            image_stim = visual.ImageStim(win, image=image_path, size=(0.5, 0.5))     
+        
+            # Draw and display the image
+            image_stim.draw()
+            win.flip()
+            
+            # Wait for either 3.5 seconds or until the user presses the 'space' key
+            timer = core.Clock()  # Create a timer to measure time
+            while timer.getTime() < 3.5:
+                keys = event.getKeys(keyList=['space'])
+                if 'space' in keys:
+                    break  # Exit the loop and move to the next image
+                core.wait(0.01)  # Add a small delay to reduce CPU usage
+     
+            Sequence_Images_List = [selected_image_Day_2 for category, selected_image in Sequence_Images]
+            Sequence_Images_Path_Only.append(image_file_Day_2)
+            print(f"Sequence Images (Paths): {Sequence_Images_Path_Only}")  # Debugging sequence images paths
+
+        # We have present each image in a sequence 
+        # Now we move on to the memory test for this sequence
+        # First we generate adjacent pair 
+        adjacent_pairs = generate_adjacent_pairs(Sequence_Images_Path_Only)
+        print(f"Adjacent Pairs (Before Removal): {adjacent_pairs}")
+                
+        # Then we remove the first and last pair as the first and last image
+        # Cannot be the cue of our question
+        adjacent_pairs = remove_first_and_last_number(adjacent_pairs)
+        print(f"Adjacent Pairs (After Removal): {adjacent_pairs}")
+                
+        # Store the adjacent pairs for this sequence in the global list
+        adjacent_pairs_per_sequence.append(adjacent_pairs)
+        print(f"The variable adjacent_pairs_per_sequence now has this: {adjacent_pairs_per_sequence}")
+         
+         
+         
+         
+         
+         
+         
+        ### Here we go memory test!
+        memory_test_instruction = (
+            "Memory Test:\n"
+            "Please determine whether the second image is positioned before or after the first image.\n"
+            "Press 'left' for before.\n"
+            "Press 'right' for after.\n"
+        )
+                
+        # Create a TextStim for the memory test instruction
+        memory_instructions = visual.TextStim(win, text=memory_test_instruction, wrapWidth=1.5, height=0.05)
+                
+        # Draw and display the memory test instructions
+        memory_instructions.draw()
+        core.wait(3.5)
+        win.flip()
+                
+        print(adjacent_pairs_per_sequence)
+        adj_pairs = adjacent_pairs_per_sequence[sequence_index - 1]
+        selected_pairs = order_of_the_target_response_pairs(adj_pairs)  
+                
+        # Define the desired size for the images (width, height)
+        image_size = (0.5, 0.5)  # Adjust these values based on your window size and requirements
+                
+        for pair in selected_pairs:
+            check_for_escape()  
+            target_image = pair[0] 
+            response_image = pair[1]
+            # Construct paths using the correct categories
+            target_image_path = os.path.join(base_folder, target_image)
+            response_image_path = os.path.join(base_folder, response_image)
+            print(f"Constructed Target Image Path: {target_image_path}")  # Debugging
+            print(f"Constructed Response Image Path: {response_image_path}")  # Debugging
+                    
+            # Create PsychoPy ImageStim for the images with specified size
+            target_image_stim = visual.ImageStim(win, image=target_image_path, size=image_size, pos=(0, 0.3))  # Position above center
+            response_image_stim = visual.ImageStim(win, image=response_image_path, size=image_size, pos=(0, -0.3))  # Position below center
+                    
+            # Draw and display both images
+            target_image_stim.draw()
+            core.wait(0.1)  
+            response_image_stim.draw()
+            win.flip()
+                    
+            min_distance = 0.2  # Example minimum distance
+            # Wait for a response from the user (left or right arrow key)
+            keys = event.waitKeys(keyList=['left', 'right', 'escape'])
+
+            reaction_time = timer.getTime() # Capture the reaction time
+            
+            if 'escape' in keys:
+                print("Escape key pressed. Exiting program.")
+                core.quit()
+                    
+            # Check and log the user's response
+            if keys:
+                response_key = keys[0]
+                y_pos = target_image_stim.pos[1]  # Use the same y-coordinate as the target image
+                reaction_time = timer.getTime()
+                        
+                if response_key == 'left':
+                    response_image_stim.setPos((-min_distance - 0.5, y_pos))  # Adjust the x position to the left
+                    response_image_stim.draw()
+                    target_image_stim.draw()
+                    win.flip()
+                    core.wait(0.1)
+                    print("The participant pressed left!")
+                    store_reaction_time(forwards_dict, backwards_dict, target_image, response_image, reaction_time, selected_categories)
+                            
+                elif response_key == 'right':
+                    response_image_stim.setPos((min_distance + 0.5, y_pos))  # Adjust the x position to the right
+                    response_image_stim.draw()
+                    target_image_stim.draw()
+                    win.flip()
+                    core.wait(0.1)
+                    print("The participant pressed right!")
+                    store_reaction_time(forwards_dict, backwards_dict, target_image, response_image, reaction_time, selected_categories)
+ 
+        sequence_index += 1  # Move to the next sequence
+    # Print the dictionaries after the experiment 
+    print("Forwards Dictionary:", forwards_dict) 
+    print("Backwards Dictionary:", backwards_dict)
+
+# Not sure whether this function works, never run here
+def extract_category(image_path):
+    return os.path.basename(os.path.dirname(image_path))
+
+# Not sure whether this function works, never run here
+# Adjusted function to wrap values
+def wrap_around(value, category_list):
+    """Wraps the given index to fit within the range of the category list length."""
+    return category_list[(value - 1) % len(category_list)]
+
+# Not sure whether this function works, never run here
+# Adjusted function to generate combinations
+def wrap_values_in_combos(combos, category_list):
+    """Wraps indices in combos to fit within the range of the category list length."""
+    wrapped_combos = []
+    for combo in combos:
+        wrapped_combo = []
+        for val in combo:
+            if isinstance(val, int):  # Only wrap integers
+                wrapped_val = wrap_around(val, category_list)
+                wrapped_combo.append(wrapped_val)
+            else:  # For non-integer values (like strings), just append them as is
+                wrapped_combo.append(val)
+        wrapped_combos.append(wrapped_combo)
+    return wrapped_combos
+
+
+# Not sure whether this function works, never run here
+def integrate_violation_test(forwards_dict, backwards_dict, selected_categories, violation_images):
+    category_list = list(forwards_dict.keys())
+    
+    violation_sequences = []
+
+    for selected_key_index in range(1, 11):
+        selected_key = category_list[selected_key_index - 1]
+
+        set1 = [selected_key_index - 2, selected_key_index - 1, "Violation_Image"]
+        set2 = [selected_key_index - 3, selected_key_index - 2, selected_key_index - 1, "Violation_Image"]
+        set3 = [selected_key_index - 4, selected_key_index - 3, selected_key_index - 2, selected_key_index - 1, "Violation_Image"]
+
+        set1 = wrap_values_in_combos([set1], category_list)[0]
+        set2 = wrap_values_in_combos([set2], category_list)[0]
+        set3 = wrap_values_in_combos([set3], category_list)[0]
+
+        List_B_forward = [selected_key_index + i for i in range(2, 7)]
+        List_B_backward = [selected_key_index + i for i in range(1, 6)]
+
+        List_B_forward = wrap_values_in_combos([List_B_forward], category_list)[0]
+        List_B_backward = wrap_values_in_combos([List_B_backward], category_list)[0]
+
+        new_lists_set1_forward = [[element, element + 1, element + 2] for element in List_B_forward]
+        new_lists_set2_forward = [[element, element + 1] for element in List_B_forward]
+        new_lists_set3_forward = [[element] for element in List_B_forward]
+
+        new_lists_set1_forward = wrap_values_in_combos(new_lists_set1_forward, category_list)
+        new_lists_set2_forward = wrap_values_in_combos(new_lists_set2_forward, category_list)
+        new_lists_set3_forward = wrap_values_in_combos(new_lists_set3_forward, category_list)
+
+        Combos_set1_forward = [set1 + new_list for new_list in new_lists_set1_forward]
+        Combos_set2_forward = [set2 + new_list for new_list in new_lists_set2_forward]
+        Combos_set3_forward = [set3 + new_list for new_list in new_lists_set3_forward]
+
+        new_lists_set1_backward = [[element, element + 1, element + 2] for element in List_B_backward]
+        new_lists_set2_backward = [[element, element + 1] for element in List_B_backward]
+        new_lists_set3_backward = [[element] for element in List_B_backward]
+
+        new_lists_set1_backward = wrap_values_in_combos(new_lists_set1_backward, category_list)
+        new_lists_set2_backward = wrap_values_in_combos(new_lists_set2_backward, category_list)
+        new_lists_set3_backward = wrap_values_in_combos(new_lists_set3_backward, category_list)
+
+        Combos_set1_backward = [set1 + new_list for new_list in new_lists_set1_backward]
+        Combos_set2_backward = [set2 + new_list for new_list in new_lists_set2_backward]
+        Combos_set3_backward = [set3 + new_list for new_list in new_lists_set3_backward]
+
+        violation_sequences.extend(Combos_set1_forward + Combos_set2_forward + Combos_set3_forward)
+        violation_sequences.extend(Combos_set1_backward + Combos_set2_backward + Combos_set3_backward)
+    
+    return violation_sequences
+
+# Not sure whether this function works
+def prepare_violation_test_sequence(violation_sequences, selected_categories, violation_images):
+    category_to_image_path = {category: "path/to/" + category + ".jpg" for category in selected_categories}
+    violation_image = random.choice(violation_images)
+    selected_sequence = random.choice(violation_sequences)
+
+    final_sequence = []
+    for item in selected_sequence:
+        if item == "Violation_Image":
+            final_sequence.append((violation_image, violation_image))
+        else:
+            final_sequence.append((category_to_image_path[item], category_to_image_path[item]))
+
+    return final_sequence
+
+
+
+############################################## This is the main program where we'd call Day 1 function, store data, pass the data to day 2 function and call it
+# Main routine
+if __name__ == "__main__":
+    win = visual.Window(size=(800, 600), fullscr=False)  # Assuming a window is created here
+    Day_1(win)  # Run Day 1
+
+    selected_categories = load_selected_categories("selected_category_order.txt")
+    print(f"Selected Categories: {selected_categories}")
+    
+    forwards_dict = {category: "NA" for category in selected_categories} 
+    backwards_dict = {category: "NA" for category in reversed(selected_categories)}
+    
+    
+
+    #for category in selected_categories:
+    #check_for_escape()  
+    #images = get_images_from_category(category)  # Get the images for the category
+    #print(f"Retrieved {len(images)} images from category '{category}': {images}")
+    #available_images_per_category[category] = images  # Add to the dictionary
+
+    # Load sequences for Day 2
+    # Set the number of sequences to generate
+    num_sequences_to_generate = 1  # Change this number to generate more or fewer sequences
+    # Generate random sequences
+    random_sequences = generate_random_sequences(selected_categories, num_sequences_to_generate)
+    # Print the random sequences
+    for idx, seq in enumerate(random_sequences, start=1):
+        print(f"Sequence {idx}: {seq}")
+        
+    # Save the random sequences to a new file
+    output_filename = "random_sequences.txt"
+    save_sequences_to_file(random_sequences, output_filename)
+    print(f"Random sequences saved to {output_filename}")
+
+        
+    sequences_file = 'random_sequences.txt'
+
+    All_sequence = load_sequences(sequences_file)
+
+    
+    adjacent_pairs_per_sequence = []
+    
+    # Run Day 2
+    presentImagePairsDay2(win, All_sequence, selected_categories, forwards_dict, backwards_dict)
+    print("Finished Day 2")
+    
+    
+    # Generate violation sequence
+    # Assuming violation_images is a list of paths to violation images
+    # NOt sure whether the below code would work without bugs, have not yet tried
+    violation_path = '/Path/to/picture/'
+    violation_images = [os.path.join(violation_path, file) for file in os.listdir(violation_path) if file.endswith(('.png', '.jpg', '.jpeg'))]
+    integrate_violation_test(forwards_dict, backwards_dict, selected_categories, violation_images)
+    violation_test_sequence = prepare_violation_test_sequence(violation_sequences, selected_categories, violation_images)
+    
+    # Then use this sequence and input this into the memory test to create non-overlapping question for violation sequence
+    # As long as the sequence have enough number of trial/ question, it should gurantee we cen get the specific reaction time
+    # which is associated with the violation image (specific reaction time at violation point)
+    # Then use linear model to compare specific replay direction at violation point vs at the same point but without the violation image
+    
+    # Memory test with violation sequence: havent wrote haha
+
+    # Clean up
+    win.close()
+    core.quit()
+
+
+
+
+
