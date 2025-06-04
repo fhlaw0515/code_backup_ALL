@@ -1,4 +1,6 @@
 # code for memory test
+# did not used
+# wasn't finished
 
 
 from PIL import Image
