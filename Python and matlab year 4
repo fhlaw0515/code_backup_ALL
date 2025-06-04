@@ -34,7 +34,7 @@
 % the output file is named 'data_nv_ran_3_script.csv'
 
 
-%% the content of the python file is pasted here, with very detailed comment especially for the first section
+%% the content of the python file is pasted here, with detailed explanation especially for the first section
 % explained what iterrows() did
 % explained what the pandas series dataframe index do
 % how to access the value associated with a column of a specific row
@@ -84,10 +84,36 @@
 % 
 % 
 % ################################## Section 1: add a inclusion column 'inc' to identify which data row to be included (is overlapped) #########################
-% 
+%
+% df["inc"] = "No"                                                            # Create a new variable names "inc" and assign the string "No" to it         
+%
+% for participant in df["Participant_ID"].unique():                             
+%     pt_data = df[df['Participant_ID'] == participant]                                                      # Get the subset of data for each participant
+%     for seq in pt_data["Sequence"].unique():
+%         seq_data = pt_data[pt_data['Sequence'] == seq ]
+%         seen_pairs = []
+%         seen_indices = []                                                                                                   
+%         for idx, row in seq_data.iterrows():                                                               # Iterate over each row in the sequence 
+%             target_cat = row['Category_of_Target']
+%             cue_cat = row['Category_of_Cue']
+%             current_pair = {target_cat, cue_cat}
+%             for pair in seen_pairs:
+%                 if current_pair == pair:
+%                     matched_pair = pair                   
+%                     match_index = seen_indices[seen_pairs.index(pair)]                                      # Find the index of the first time we saw this pair                    
+%                     if row["Response_correct"] == 1 and df.loc[match_index, "Response_correct"] == 1:       # Check if both rows have Response_correct == 1
+%                         df.at[idx, "inc"] = "Yes"
+%                         df.at[match_index, "inc"] = "Yes"                           
+%             seen_pairs.append(current_pair)                                                                 # Add the current pair to the seen pairs list
+%             seen_indices.append(idx)
+
+
+% #########################################################################################################################################################
+% ################################################### Detailed explanation of section 1: ##################################################################
+% #########################################################################################################################################################
+
 % # now df is an object that has is a n-dimensional array ndarray
 % # each column name is like a variable name, each column is like an array, a list of value? not sure.
-% 
 % # each row has a index, the index starts from zero, treat it like a global index to identify where the data is
 % # this index can be used as a reference
 % # every time we seen a pair (ran a row), we also marked the seen_index (the index of that row in the whole big df dataframe)
@@ -97,115 +123,91 @@
 % # If every time we find a match, we find the position number of the local list (seen_pair)
 % # access the global index of df using the list seen_indices [position]
 % # we can now manipulate the data of the row that we seen previously
-% 
-% 
-% # Create a new variable names "inc" and assign the string "No" to it
-% df["inc"] = "No"
-% 
+
+
+% # line [90]: for participant in df["Participant_ID"].unique():  
 % # df["Participant_ID"].unique() gives a kinda list to iterate over
 % # if we have 10000 participant, then we will do something for 10000 times
 % # it only sets the amount we iterate, it doesn't say what we do
-% 
-% for participant in df["Participant_ID"].unique():
-% 
-%     # Get the subset of data for each participant
-%     pt_data = df[df['Participant_ID'] == participant]
-% 
-%     # Every time we are sitting on an element of the list, take the participant number (the current element)
-%     # we subset the whole dataframe df, using df[condition], keep the row of data only if the condition is met
-%     # df['Participant_ID'] is accessing the value stored to the key 'Participant_ID'
-%     # df[keep the data row only if the value to the key of that row == participant]
-%     # if we save the pt_data to a csv file every time we run, we will actually get 50 different csv file (though might have been overwrote)
-% 
-% 
-%     for seq in pt_data["Sequence"].unique():
-%         # every time after we create a subset of the participant data, we then want to create a subset of data for each sequence
-%         # assign the sequence data (e.g seq1) to he variable seq_data, we temporarily store it here and work on the sequence data
-%         seq_data = pt_data[pt_data['Sequence'] == seq ]
-%         seen_pairs = []
-%         seen_indices = []
-% 
-%         # If we have 8 questions inside 1 sequence, then we are now looking at 8 rows of data, known as seq_data
-%         # Each row of data has a global index (set by the big df), then we do sth for each index (not neccessarily started from 0),
-%         # row by row (iterate over each row of data)
-%         # here idx, row; the row doesnt mean a row of data, it is like the pandas series of data at the current global index (a row of the pd)
-%         # each row of data it's like we made a dictionary about it, the dict is named 'row'
-%         # the key is our column name, so if at an index e.g 0 (first row), we use row['Age'] this will gives us the value to the key 'Age'
-%         # of the data when we are sitting at index 0
-% 
-%         # Iterate over each row in the sequence
-%         for idx, row in seq_data.iterrows():
-%             target_cat = row['Category_of_Target']
-%             cue_cat = row['Category_of_Cue']
-%             current_pair = {target_cat, cue_cat}
-%             # we loop through the index (each row) one by one, each time we fetch the value of the column and store it
-%             # and also create a set as a target-cue image pair store it as a new variable in python
-% 
-%             # assuming the list seen_pairs is not empty right now (meaning that we have at least ran more than the first row)
-%             # we have at least one row of data above us (above our current index)
-%             # the length of the list seen_pairs actually means how many row has already passed, if we are looking at question 5
-%             # we will have 5 elements in the list of seen_pairs
-%             # so we will do 5 comparison (for every element we do something, and we have 5)
-% 
-%             # Check if the current pair was seen before (order doesn't matter)
-%             for pair in seen_pairs:
-%                 # for every pair that we seen, it's like we fetch the old pair from the seen_pair list
-%                 # then we do a comparison, ask, if the old pair (the element from the seen_pair list) == to our current pair?
-%                 # if yes, we store the old_pair as a new temporary variable named 'matched_pair')
-%                 if current_pair == pair:
-%                     matched_pair = pair
-% 
-%                     # first we need the global index of the matched pair
-%                     # to find this, we need to find where the matched pair was positioned in the seen_pair
-%                     # seen_pairs.index(pair)
-%                     # you supply the element that you want to find (pair) as an argumen
-%                     # use list.index()
-%                     # then you get the position of the element in the list
-%                     # if the seen_pair is [clothes-fish, cars-fruit, pen-animals], and your 'pair' is 'car-fruit'
-%                     # then you get a number of 1, meaning that car-fruit is the middle position
-%                     # next you use this position number 1
-%                     # use seen_indices[1], meaning that you are accessing the content of the second element of the list seen_indices
-%                     # if the seen_indices was a list like [4,7,10],
-%                     # meaning that the global index of clothes-fish was 4, cars-fruit was 7, and pen-animals was 10
-%                     # then seen_indices[1] gives you the value positioned at 2nd in the list, give you the 7
-%                     # this 7 is the global index of the matched pair that you need
-%                     # df.loc[global_index, "column name"] this df.loc let you access the value of the column of that row with index of global_index
-%                     # df.at[idx, "column name"] = "Yes", lets you update the value of column if you know the global index
-% 
-% 
-%                     # Find the index of the first time we saw this pair
-%                     match_index = seen_indices[seen_pairs.index(pair)]
-%                     # Check if both rows have Response_correct == 1
-%                     if row["Response_correct"] == 1 and df.loc[match_index, "Response_correct"] == 1:
-%                         df.at[idx, "inc"] = "Yes"
-%                         df.at[match_index, "inc"] = "Yes"              
-%             # Add the current pair to the seen pairs list
-%             seen_pairs.append(current_pair)
-%             # the 'idx' is the global index, remember, this was because when we subset the pt data and seq data, the global index was preserved
-%             # we had been looping over the global index
-%             seen_indices.append(idx)
-% 
-% 
+
+% # line [91]: pt_data = df[df['Participant_ID'] == participant]                                             
+% # Every time we are sitting on an element of the list, take the participant number (the current element)
+% # we subset the whole dataframe df, using df[condition], keep the row of data only if the condition is met
+% # df['Participant_ID'] is accessing the value stored to the key 'Participant_ID'
+% # df[keep the data row only if the value to the key of that row == participant]
+% # if we save the pt_data to a csv file every time we run, we will actually get 50 different csv file (though might have been overwrote)
+
+% # line[96]: for idx, row in seq_data.iterrows():    
+% # If we have 8 questions inside 1 sequence, then we are now looking at 8 rows of data, known as seq_data
+% # Each row of data has a global index (set by the big df), then we do sth for each index (not neccessarily started from 0), row by row (iterate over each row of data)
+% # here idx, row; the row doesnt mean a row of data, it is like the pandas series of data at the current global index (a row of the pd)
+% # each row of data it's like we made a dictionary about it, the dict is named 'row'
+% # the key is our column name, so if at an index e.g 0 (first row), we use row['Age'] this will gives us the value to the key 'Age' of the data when we are sitting at index 0
+% # line[97]-[99]
+% # we loop through the index (each row) one by one, each time we fetch the value of the column and store it
+% # and also create a set as a target-cue image pair store it as a new variable in python
+
+% # assuming the list seen_pairs is not empty right now (meaning that we have at least ran more than the first row)
+% # we have at least one row of data above us (above our current index)
+% # the length of the list seen_pairs actually means how many row has already passed, if we are looking at question 5
+% # we will have 5 elements in the list of seen_pairs
+% # so we will do 5 comparison (for every element we do something, and we have 5)
+
+% # line [100]-[102]
+% # Check if the current pair was seen before (order doesn't matter)
+% # for every pair that we seen, it's like we fetch the old pair from the seen_pair list
+% # then we do a comparison, ask, if the old pair (the element from the seen_pair list) == to our current pair?
+% # if yes, we store the old_pair as a new temporary variable named 'matched_pair')
+
+% line [103]: seen_pairs.index(pair)
+% # first we need the global index of the matched pair
+% # to find this, we need to find where the matched pair was positioned in the seen_pair
+% # seen_pairs.index(pair)
+% # you supply the element that you want to find (pair) as an argument
+% # use list.index()
+% # then you get the position of the element in the list
+% # if the seen_pair is [clothes-fish, cars-fruit, pen-animals], and your 'pair' is 'car-fruit'
+% # then you get a number of 1, meaning that car-fruit is the middle position
+
+% line [103]: seen_indices[seen_pairs.index(pair)] 
+% # next you use this position number 1 that you got from seen_pairs.index(pair)
+% # use seen_indices[1], meaning that you are accessing the content of the second element of the list seen_indices
+% # if the seen_indices was a list like [4,7,10],
+% # meaning that the global index of clothes-fish was 4, cars-fruit was 7, and pen-animals was 10
+% # then seen_indices[1] gives you the value positioned at 2nd in the list, give you the 7
+% # this 7 is the global index of the matched pair that you need
+
+% # line [104]: df.loc[global_index, "column name"] 
+% # this df.loc let you access the value of the column of that row with index of global_index
+% # line [105]: df.at[idx, "column name"] = "Yes",
+% # lets you update the value of column if you know the global index
+
+% # line [108]:
+% # the 'idx' is the global index, remember, this was because when we subset the pt data and seq data, the global index was preserved
+% # we had been looping over the global index
+
+% #########################################################################################################################################################
+% ################################################### The END of explanation of section 1: ################################################################
+% #########################################################################################################################################################
+
+
 % ################################# Section 2: create a column named SET and Group, after selecting all data that is supposed to be included ######################
-% 
+% # logic similar to those in section 1
 % # need to subset the data to only include overlapped question before assigning SET and group number
 % df = df[df['inc'] == "Yes"]
-% 
 % 
 % # for every participant, subset all their data first, then,
 % # for every sequence of the data, for every row of the sequence,
 % # find the value stored in the category of cue (and target)
 % # store the combination as a set (python's set)
+%
 % df["combination"] = "NA"
 % df["SET"] = 0
 % df['Group'] = "NA"
 % 
-% 
 % for participant in df["Participant_ID"].unique():
-% 
 %     # Get the subset of data for each participant
 %     pt_data = df[df['Participant_ID'] == participant]
-% 
 %     for seq in pt_data["Sequence"].unique():
 %         # Get the subset of data for each sequence
 %         seq_data = pt_data[pt_data['Sequence'] == seq ]
