@@ -3,7 +3,6 @@
 # used ABSSeq bayesian approach as further analysis, identified overlapped genes with published disease database and papers, checked if proposed biomarkers were sig fig
 # step 1 and 2 might not be applicable in other dataset, unless some gene names were also mispelled, and that you want to reduce thepercentage of unmapped genes (symbol/ensembl to entrezid) before ORA)
 
-# useful code
 # line 240-261 custom theme for plot
 # line 594-612 adding significant stars in boxplot, modified from year 3 daphnia heart report
 # line 549-552 intersect(), length(), unique() useful functions to identify number of overlapped genes and their identity for venn diagram
