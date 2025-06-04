@@ -1,6 +1,5 @@
-# code for memory test
-# did not used
-# wasn't finished
+# code for memory test (made sure each target-cue image pair only appears once, if ask what comes after image 1, then we won't ask what comes before image 2)
+# the code wasn't finished
 
 
 from PIL import Image
