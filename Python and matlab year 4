@@ -1,0 +1,467 @@
+# Use R studio for this statistical analysis and visualisation it will be quicker 
+# I used matlab here just to learn its syntax, and also learning how to use python pandas and numpy
+# could possibly cast the csv file into a python dictionary and process the data without pandas
+# for the statistical analysis, used loop to run a GLMM for every participant and stored stat results as csv file
+# also used loop to create boxplot for each sequence of all sequences of a participant
+# nothing useful just curious about whether adding a random slope of participants would have masked any hidden trend 
+# but the loop could be useful in a situation when dataset RT is grouped by the same target/cue image (used in project presentation in R studio when trying to repeat/mimic the analysis of the paper 'Image_memorability_influences_memory_for_where_the_item_was_seen_but_not_when')
+
+# matlab key takeaway -can move file, create folder using command prompt syntax, panel can see the folder
+# can click on the table to delete the data etc
+# use %% to create a section break, it works like Jupyter notebook tell you what error and output underneath
+# can dock all images into the same window and see them side by side
+# my laptop had troubles of saving the .mat file and importing that in python, still using csv, not convenient
+# that way every time I export the data as csv, import back to table, the datatype was NOT preserved
+# and, the glmm in matlab all ran successfully without error everytime, I doubt if R studio is more trustable
+# every line the ending needs semi-colon, loop needs to type the word end, other stuff similar to python 
+
+
+%% dataframe information
+% my project dataset has predictable and non-predictable sequences, python code (at bottom) was used to subset the data
+% so that it contained only non-violated sequences
+% the output file was stored as 'non_violated_sequences.csv'; this is the csv file this code working on & wanting to analyse
+% P.S the non-violated sequence is the whole sequence
+% if the question does not have PE-items, however, the sequence that the question belonged, has, then the question was also excluded
+% i did not select the Q based on whether that Q has PE or not
+% but based on the whole sequence (8 questions) has PE or not 
+
+%% pipeline
+% --> omit NA and select RT >0.2 < 10 
+% --> now process the dataframe in python with 'data_processing_all_in_one.py
+% --> add a 'inc' column 
+% --> select the data only if 'inc' == 'Yes'
+% --> add a 'SET' column 
+% --> add a 'Group' column 
+% the output file is named 'data_nv_ran_3_script.csv'
+
+
+%% the content of the python file is pasted here, with very detailed comment especially for the first section
+% explained what iterrows() did
+% explained what the pandas series dataframe index do
+% how to access the value associated with a column of a specific row
+% how to access specific row of data that met the set condition
+% how to create a new column, update value of a specific row
+% how to access the index (element position) of a list given the element
+% how to access the element of a list when given the position (index)
+% how to subset data according to participant number
+% how to loop over something but only on a subset of dataframe, nested loop
+% for every participant, go through each sequence one by one
+% can determine if the question (target cue images) appeared before
+% determine if it is the first time (group a) or the second time (b) being asked
+
+
+% ########################### NOTES about iterrows() of pands ####################
+% # What is 'for idx , row in iterrows():' in pandas?
+% # import pandas as pd
+% 
+% #df = pd.DataFrame({
+% #    'Name': ['Alice', 'Bob'],
+% #    'Age': [30, 25] })
+% 
+% #for idx, row in df.iterrows():
+% #    print(f"Row {idx}: {row['Name']} is {row['Age']} years old.")
+% 
+% #output:
+% #Row 0: Alice is 30 years old.
+% #Row 1: Bob is 25 years old.
+% 
+% # row is a pandas series, can convert to a real dictionary by row.to_dict(), I think pandas series is different from a real dict that its datatype is constrained, the shape is fixed? idk
+
+% #################################################################################################################################################################
+% #################################################################################################################################################################
+% ################################### Python code to process dataframe before running GLM #########################################################################
+% #################################################################################################################################################################
+% #################################################################################################################################################################
+
+
+% import pandas as pd
+% import numpy as np
+% import matplotlib.pyplot as plt
+% import os
+% 
+% # Load data
+% file_path = '/Path/non_violated_sequences/csv/'
+% df = pd.read_csv(file_path)
+% 
+% 
+% ################################## Section 1: add a inclusion column 'inc' to identify which data row to be included (is overlapped) #########################
+% 
+% # now df is an object that has is a n-dimensional array ndarray
+% # each column name is like a variable name, each column is like an array, a list of value? not sure.
+% 
+% # each row has a index, the index starts from zero, treat it like a global index to identify where the data is
+% # this index can be used as a reference
+% # every time we seen a pair (ran a row), we also marked the seen_index (the index of that row in the whole big df dataframe)
+% # the list of seen_pair and seen_index is like parallel, aligned
+% # meaning that if we know the exact position (nth) of a seen_pair e.g {clothes-fish}
+% # we can also use the position number (nth) to access the global index using seen_indices [nth], which was the list of global index that were stored
+% # If every time we find a match, we find the position number of the local list (seen_pair)
+% # access the global index of df using the list seen_indices [position]
+% # we can now manipulate the data of the row that we seen previously
+% 
+% 
+% # Create a new variable names "inc" and assign the string "No" to it
+% df["inc"] = "No"
+% 
+% # df["Participant_ID"].unique() gives a kinda list to iterate over
+% # if we have 10000 participant, then we will do something for 10000 times
+% # it only sets the amount we iterate, it doesn't say what we do
+% 
+% for participant in df["Participant_ID"].unique():
+% 
+%     # Get the subset of data for each participant
+%     pt_data = df[df['Participant_ID'] == participant]
+% 
+%     # Every time we are sitting on an element of the list, take the participant number (the current element)
+%     # we subset the whole dataframe df, using df[condition], keep the row of data only if the condition is met
+%     # df['Participant_ID'] is accessing the value stored to the key 'Participant_ID'
+%     # df[keep the data row only if the value to the key of that row == participant]
+%     # if we save the pt_data to a csv file every time we run, we will actually get 50 different csv file (though might have been overwrote)
+% 
+% 
+%     for seq in pt_data["Sequence"].unique():
+%         # every time after we create a subset of the participant data, we then want to create a subset of data for each sequence
+%         # assign the sequence data (e.g seq1) to he variable seq_data, we temporarily store it here and work on the sequence data
+%         seq_data = pt_data[pt_data['Sequence'] == seq ]
+%         seen_pairs = []
+%         seen_indices = []
+% 
+%         # If we have 8 questions inside 1 sequence, then we are now looking at 8 rows of data, known as seq_data
+%         # Each row of data has a global index (set by the big df), then we do sth for each index (not neccessarily started from 0),
+%         # row by row (iterate over each row of data)
+%         # here idx, row; the row doesnt mean a row of data, it is like the pandas series of data at the current global index (a row of the pd)
+%         # each row of data it's like we made a dictionary about it, the dict is named 'row'
+%         # the key is our column name, so if at an index e.g 0 (first row), we use row['Age'] this will gives us the value to the key 'Age'
+%         # of the data when we are sitting at index 0
+% 
+%         # Iterate over each row in the sequence
+%         for idx, row in seq_data.iterrows():
+%             target_cat = row['Category_of_Target']
+%             cue_cat = row['Category_of_Cue']
+%             current_pair = {target_cat, cue_cat}
+%             # we loop through the index (each row) one by one, each time we fetch the value of the column and store it
+%             # and also create a set as a target-cue image pair store it as a new variable in python
+% 
+%             # assuming the list seen_pairs is not empty right now (meaning that we have at least ran more than the first row)
+%             # we have at least one row of data above us (above our current index)
+%             # the length of the list seen_pairs actually means how many row has already passed, if we are looking at question 5
+%             # we will have 5 elements in the list of seen_pairs
+%             # so we will do 5 comparison (for every element we do something, and we have 5)
+% 
+%             # Check if the current pair was seen before (order doesn't matter)
+%             for pair in seen_pairs:
+%                 # for every pair that we seen, it's like we fetch the old pair from the seen_pair list
+%                 # then we do a comparison, ask, if the old pair (the element from the seen_pair list) == to our current pair?
+%                 # if yes, we store the old_pair as a new temporary variable named 'matched_pair')
+%                 if current_pair == pair:
+%                     matched_pair = pair
+% 
+%                     # first we need the global index of the matched pair
+%                     # to find this, we need to find where the matched pair was positioned in the seen_pair
+%                     # seen_pairs.index(pair)
+%                     # you supply the element that you want to find (pair) as an argumen
+%                     # use list.index()
+%                     # then you get the position of the element in the list
+%                     # if the seen_pair is [clothes-fish, cars-fruit, pen-animals], and your 'pair' is 'car-fruit'
+%                     # then you get a number of 1, meaning that car-fruit is the middle position
+%                     # next you use this position number 1
+%                     # use seen_indices[1], meaning that you are accessing the content of the second element of the list seen_indices
+%                     # if the seen_indices was a list like [4,7,10],
+%                     # meaning that the global index of clothes-fish was 4, cars-fruit was 7, and pen-animals was 10
+%                     # then seen_indices[1] gives you the value positioned at 2nd in the list, give you the 7
+%                     # this 7 is the global index of the matched pair that you need
+%                     # df.loc[global_index, "column name"] this df.loc let you access the value of the column of that row with index of global_index
+%                     # df.at[idx, "column name"] = "Yes", lets you update the value of column if you know the global index
+% 
+% 
+%                     # Find the index of the first time we saw this pair
+%                     match_index = seen_indices[seen_pairs.index(pair)]
+%                     # Check if both rows have Response_correct == 1
+%                     if row["Response_correct"] == 1 and df.loc[match_index, "Response_correct"] == 1:
+%                         df.at[idx, "inc"] = "Yes"
+%                         df.at[match_index, "inc"] = "Yes"              
+%             # Add the current pair to the seen pairs list
+%             seen_pairs.append(current_pair)
+%             # the 'idx' is the global index, remember, this was because when we subset the pt data and seq data, the global index was preserved
+%             # we had been looping over the global index
+%             seen_indices.append(idx)
+% 
+% 
+% ################################# Section 2: create a column named SET and Group, after selecting all data that is supposed to be included ######################
+% 
+% # need to subset the data to only include overlapped question before assigning SET and group number
+% df = df[df['inc'] == "Yes"]
+% 
+% 
+% # for every participant, subset all their data first, then,
+% # for every sequence of the data, for every row of the sequence,
+% # find the value stored in the category of cue (and target)
+% # store the combination as a set (python's set)
+% df["combination"] = "NA"
+% df["SET"] = 0
+% df['Group'] = "NA"
+% 
+% 
+% for participant in df["Participant_ID"].unique():
+% 
+%     # Get the subset of data for each participant
+%     pt_data = df[df['Participant_ID'] == participant]
+% 
+%     for seq in pt_data["Sequence"].unique():
+%         # Get the subset of data for each sequence
+%         seq_data = pt_data[pt_data['Sequence'] == seq ]
+%         seen_pairs = []
+%         seen_indices = []
+%         set_indices = 0
+% 
+%         # this initialization is for job 2: add Group to each SET
+%         seen_set = []
+%         seen_indices_set = []
+% 
+% 
+%         # Iterate over each row in the sequence
+%         for idx, row in seq_data.iterrows():
+%             # fetch category of target and cue to form the combination column
+%             target_cat = row['Category_of_Target']
+%             cue_cat = row['Category_of_Cue']
+%             current_pair = {target_cat, cue_cat}
+% 
+%             # assign the value of target-cue combo to the combination column for convenience
+%             df.at[idx, "combination"] = current_pair
+% 
+%             # Check if the current pair was seen before (order doesn't matter)
+%             for pair in seen_pairs: 
+%                 if current_pair == pair:
+%                     matched_pair = pair
+% 
+%                     # Find the index of the first time we saw this pair
+%                     match_index = seen_indices[seen_pairs.index(pair)]
+%                     # print(f"original set index is",{set_indices})
+%                     df.at[idx, "SET"] = set_indices + 1
+%                     df.at[match_index, "SET"] = set_indices + 1
+%                     # print(f"we have just assigned both row for their set index as ",{set_indices+1})
+%                     set_indices = set_indices + 1
+% 
+%             # Add the current pair to the seen pairs list
+%             seen_pairs.append(current_pair)
+%             # the 'idx' is the global index, remember, this was because when we subset the pt data and seq data, the global index was preserved
+%             # we had been looping over the global index
+%             seen_indices.append(idx)
+% 
+%             # we are still under the loop of 'for idx, row in seq_data.iterrows():'
+%             # but we now do job 2, assign group number to SET
+%             current_set = row["SET"]
+% 
+% 
+%             # Check if the SET number was seen before
+%             for num in seen_set:
+%                 if current_set == num:
+%                     matched_set = current_set
+% 
+%                     # Find the index of the first time we saw this pair
+%                     match_index_set = seen_indices_set[seen_set.index(num)]
+%                     df.at[idx, "Group"] = "b"
+%                     df.at[match_index_set, "Group"] = "a"
+% 
+%             # Add the current pair to the seen pairs list
+%             seen_set.append(current_set)
+%             seen_indices_set.append(idx)
+% 
+% 
+% 
+% 
+% # Save the updated dataframe
+% saved_file = '/Path/data_nv_ran_3_script/csv/'
+% df.to_csv('/Path/data_nv_ran_3_script/csv/', index=False)
+% print(f"file saved to " ,{saved_file})
+
+% #################################################################################################################################################################
+% #################################################################################################################################################################
+% ########################### The END of the Python code to process dataframe before running GLM ##############################################################################################################
+% #################################################################################################################################################################
+% #################################################################################################################################################################
+
+
+%% Statistical Analysis starts here: 
+
+% Load non_violated_sequences as a table naed data_nv
+data_nv = readtable('/Path/non_violated_sequences/csv/');
+% 8488 X 24
+
+data_nv = rmmissing(data_nv); % omit NA
+data_nv = data_nv(:, 1:18);  % Keep only relevant columns
+% 8435 X 18
+
+% Ensure correct datatype before filtering reaction times (RT)
+data_nv.Reaction_Time = double(data_nv.Reaction_Time);
+
+% Filter valid RT
+data_nv = data_nv(data_nv.Reaction_Time > 0.2 & data_nv.Reaction_Time < 10, :);
+% 8408 X 18
+
+% save
+writetable(data_nv, '/Path/data_nv/csv/');
+
+% process data_nv in python then import the output csv as a table named master
+master = readtable('/Path/data_nv_ran_3_script/csv/');
+
+%%
+% Ensure correct data type
+
+% Convert to categorical
+master.Sequence = categorical(master.Sequence);
+master.Participant_ID = categorical(master.Participant_ID);
+master.Data_Entry_Row = categorical(master.Data_Entry_Row);
+master.Replay_Direction = categorical(master.Replay_Direction);
+master.Response_correct = categorical(master.Response_correct);
+
+% Convert to string
+master.Image_Sequence = string(master.Image_Sequence);
+master.Category_of_Target = string(master.Category_of_Target);
+master.Category_of_Cue = string(master.Category_of_Cue);
+master.Relative_Path_of_Target = string(master.Relative_Path_of_Target);
+master.Relative_Path_of_Cue = string(master.Relative_Path_of_Cue);
+master.Violation_Type = string(master.Violation_Type);
+master.Violation = string(master.Violation);
+master.File_name_of_Target = string(master.File_name_of_Target);
+master.File_name_of_Cue = string(master.File_name_of_Cue);
+
+
+% Convert to double 
+master.Reaction_Time = double(master.Reaction_Time);
+
+%% code by copilot not sure how it do its job but it does it job anyway
+%% we fit a generalised linear mixed model for every participant.....
+% did not exclude outliers, kinda on purpose, want to see
+
+pt_list = unique(master.Participant_ID);
+coef_table = table();  % To store coefficients
+
+% Initialize empty table with correct variable names and types
+all_result_glme = table('Size', [0 8], ...
+    'VariableTypes', {'double', 'string', 'double', 'double', 'double', 'double', 'double', 'double'}, ...
+    'VariableNames', {'Participant_ID', 'Term', 'Estimate', 'SE', 'tStat', 'pValue', 'CI_Lower', 'CI_Upper'});
+
+for i = 1:length(pt_list)
+    pid = pt_list(i);
+    sub_data = master(master.Participant_ID == pid, :);
+    
+    % Fit linear model (adjust formula as needed)
+    lm = fitglme(sub_data, 'Reaction_Time ~ Replay_Direction + (1|SET)',...
+        'Distribution','Gamma');
+    
+    % Extract model summary
+    coef_table = lm.Coefficients;
+    
+    % Returns [lower, upper] bounds
+    ci = coefCI(lm);
+    
+    % Prepare data
+    n = height(coef_table);
+    participant_ids = repmat(pid, n, 1);
+    % terms = coef_table.Properties.RowNames; % for linear model
+    terms = string(coef_table.Name);
+    % for mixed model, use .Name instead of row names
+
+    % Add participant ID and variable names to each row
+    n = height(coef_table);
+    result = table(participant_ids, terms, ...
+        coef_table.Estimate, coef_table.SE, ...
+        coef_table.tStat, coef_table.pValue, ...
+        ci(:,1), ci(:,2), ...
+        'VariableNames', {'Participant_ID', 'Term', ...
+        'Estimate', 'SE', 'tStat', ...
+        'pValue', 'CI_Lower', 'CI_Upper'});
+    
+    % Append to full results
+    all_results_glme = [all_results; result];
+
+end
+
+% print the results
+% disp(all_results_glme)
+% also ran the general linear model without (1|SET) and stored results
+% disp(all_results);
+
+%%
+% filter the table for visibility, I dont need the intercept row
+all_results_glme_no_intercept = all_results_glme(all_results_glme.Term ~= '(Intercept)', :);
+
+% I only want to see the row if the p value is < 0.05 (glme)
+all_results_glme_sig = all_results_glme_no_intercept(all_results_glme_no_intercept.pValue < 0.05, :);
+
+% save
+writetable(all_results_glme,'all_results_glme.csv')
+writetable(all_results_glme_sig,'all_results_glme_sig.csv')
+
+%% create boxlot group by 'Group' to see if the first answer RT is visually different from the second
+% not important 
+
+% works for 1 pt only, if you have n sequence then you get n boxplots
+data = master(master.Participant_ID == '1', :);
+
+% Get unique sequences
+sequences = unique(data.Sequence);
+
+% Loop through each sequence
+for i = 1:length(sequences)
+    seq = sequences(i);
+    
+    % Filter data for this sequence
+    seq_data = data(data.Sequence == seq, :);
+    
+    % Create a new figure
+    figure;
+    
+    % Create boxplot
+    boxplot(seq_data.Reaction_Time, seq_data.Group);
+    
+    % Add title and labels
+    title(['Reaction Time for Sequence ', num2str(seq)]);
+    ylabel('Reaction Time');
+    xlabel('Group');
+    
+    % Optional: save the figure
+    saveas(gcf, ['sequence_' num2str(seq) '.png']);
+end
+
+
+%% 'non_violated_sequences.csv' was the subset of the whole cleaned-up dataset
+% it was subsetted using the following code 
+
+
+% code starts here:
+
+% import pandas as pd
+% import os
+% 
+% 
+% # Define the path to the folder containing the CSV file
+% folder_path = "/Path/of/input/folder/"
+% 
+% # Define the path to the folder where the filtered CSV files will be saved
+% output_folder_path = "/Path/of/output/folder/"
+% os.makedirs(output_folder_path, exist_ok=True)
+% 
+% file_path = "/Path/of/input/folder/data/csv/"
+% df = pd.read_csv(file_path)
+% 
+% # Group by Participant_ID and Sequence, and check if any Violation is "Yes"
+% violated_sequences = df.groupby(['Participant_ID', 'Sequence'])['Violation'].apply(lambda x: (x == 'Yes').any()).reset_index()
+% 
+% # Merge the result with the original DataFrame to get the full data for violated sequences:
+% violated_data = pd.merge(df, violated_sequences[violated_sequences['Violation'] == True][['Participant_ID', 'Sequence']], on=['Participant_ID', 'Sequence'])
+% 
+% # Get the non-violated sequences:
+% non_violated_data = pd.merge(df, violated_sequences[violated_sequences['Violation'] == False][['Participant_ID', 'Sequence']], on=['Participant_ID', 'Sequence'])
+% 
+% # Save the filtered data to new CSV files: 
+% output_file_path = os.path.join(output_folder_path, 'violated_sequences.csv')
+% violated_data.to_csv(output_file_path, index=False)
+% 
+% output_file_path = os.path.join(output_folder_path, 'non_violated_sequences.csv')
+% non_violated_data.to_csv(output_file_path, index=False)
+% 
+% print("CSV files for violated and non-violated sequences have been generated.")
+% 
+% 
