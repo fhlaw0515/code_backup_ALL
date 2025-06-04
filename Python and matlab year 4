@@ -12,7 +12,6 @@
 # can dock all images into the same window and see them side by side
 # my laptop had troubles of saving the .mat file and importing that in python, still using csv, not convenient
 # that way every time I export the data as csv, import back to table, the datatype was NOT preserved
-# and, the glmm in matlab all ran successfully without error everytime, I doubt if R studio is more trustable
 # every line the ending needs semi-colon, loop needs to type the word end, other stuff similar to python 
 
 
