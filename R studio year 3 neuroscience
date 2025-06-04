@@ -1,5 +1,10 @@
-# code need tidy up
 # ddply summarise statistics, exclude outiers, condition to interpret skewness value, plot geom_signif() and showSignificance() useful
+# do a wilcoxon test use this code:
+# wilcox.test(Control$Heart_rate, Atropine$Heart_rate, paired = FALSE)
+# t test:  t.test(Control$Heart_rate, Atropine$Heart_rate, paired = FALSE)
+# normality test: shapiro.test(df$column[!is.na(df$column)])]
+# log transform: df$column <- log10(df$column)
+# anova: model <- aov(Heart_rate ~ Drug_conc, data = df)
 
 library(readr)
 library(e1071)
