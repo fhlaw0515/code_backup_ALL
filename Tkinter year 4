@@ -230,12 +230,12 @@ try:
 
     credit_list = [] # create a list to store the credit
     assessment_string = []
-    for url in df["url"].unique(): # try click on each url first
+    for url in df["url"].unique(): # try click on each url first # I did this loop of course url as a seperate task after getting course name and url because otherwise that didn't work, not sure why
         driver.get(url)
 
         try:
             credits_element = driver.find_element(By.XPATH, "//li[strong[contains(text(),'Credits')]]")
-            credit = credits_element.text.replace("Credits: ", "").strip()
+            credit = credits_element.text.replace("Credits: ", "").strip() # Because the text were Credits = 20, and I only wanted the number, so replace the string Credits as an empty string
             credit_list.append({"Credit": credit})
 
             assessment_element = driver.find_element(By.XPATH, "//h3[contains(text(),'Assessment')]")
