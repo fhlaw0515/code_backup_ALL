@@ -1,0 +1,120 @@
+import tkinter as tk
+root=tk.Tk()
+
+
+Label1 = Label(root, text="Making a table of your university grading scale: \n\n Please tick the boxes if your assessment framework has these grades")
+Label1.grid(row=0, sticky=W)
+Label1
+# each checkbox needs to have a variable, if it is ticked, it should be 1 I think, otherwise it will be zero
+var1 = IntVar() 
+varA = Checkbutton(root, text="A", variable=var1)
+varA.grid(row=1, column = 1, sticky=W) # create a checkbox for the grade A
+varA
+
+var2 = IntVar()
+varB = Checkbutton(root, text="B", variable=var2)
+varB.grid(row=1, column = 2, sticky=W) # create a checkbox for grade B
+varB
+
+var3 = IntVar()
+varC = Checkbutton(root, text="C", variable=var3)
+varC.grid(row=1, column = 3, sticky=W) # create a checkbox 
+varC
+
+var4 = IntVar()
+varD = Checkbutton(root, text="D", variable=var4)
+varD.grid(row=2, column = 1, sticky=W) # create a checkbox 
+varD
+
+var5 = IntVar()
+varE = Checkbutton(root, text="E", variable=var5)
+varE.grid(row=2, column = 2,  sticky=W) # create a checkbox 
+varE
+
+var6 = IntVar()
+varF = Checkbutton(root, text="F", variable=var6)
+varF.grid(row=2, column = 3, sticky=W) # create a checkbox 
+varF 
+
+var7 = IntVar()
+varG = Checkbutton(root, text="G", variable=var7)
+varG.grid(row=3, column = 1,sticky=W) # create a checkbox 
+varG
+
+var8 = IntVar()
+varH = Checkbutton(root, text="H", variable=var8)
+varH.grid(row=3, column = 2, sticky=W) # create a checkbox 
+varH
+
+var9 = IntVar()
+varI = Checkbutton(root, text="I", variable=var9)
+varI.grid(row=3, column = 3, sticky=W) # create a checkbox 
+varI
+
+# create a list storing all variable states (either 0 or 1) of all checkbox button 
+my_list = [var1,var2,var3,var4,var5,var6,var7,var8,var9]
+
+# store all button object as a list
+button_list = [varA,varB,varC,varD,varE,varF,varG,varH,varI]
+
+# create the grade options list (a list of string of all available grades)
+# e.g ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I']
+grade_options = []
+for element in button_list:
+    grade_options.append(element['text'])
+
+def checkbox_destroy(empty_list):
+    for element in button_list:
+        element.destroy()
+    empty_list = empty_list
+    grade_band(empty_list)
+
+def grade_band(empty_list):
+    length = len(empty_list)
+    #greetingLabel = tk.Label(root,text='Please tell me the number of bands to each grades',font=('Arial',15))
+    print(f"I need {length} dropdown menu.")
+    Label1.configure(text='')
+    list_selected = []
+    index = 0
+    for i in range(len(empty_list)):
+        selected_value = tk.StringVar()
+        selected_value.set("1")  # default value
+        list_selected.append(selected_value)
+        dropdown = tk.OptionMenu(root, selected_value, "1", "2", "3", "4", "5")
+        dropdown.grid(row = index, column = 2)
+        # Create a label for the grade before the dropdown menu
+        label = tk.Label(root, text=empty_list[index])
+        label.grid(row=index, column=1)
+        index = index + 1
+    label = tk.Label(root, text='   Please select the number of bands to each grade')
+    label.grid(row = 1, column=3)
+    submit_button.grid(column = 4,row = 3)
+    quit_button.grid(column = 4, row = 4)
+
+
+def calculate_state():
+    dictionary = {}
+    for alphabet, state in zip(grade_options, my_list): # my_list means the list of variable states!!!!
+        dictionary[alphabet] = state.get() # create a dictionary with grade alphabet as key, variable state as value
+    empty_list = [] # create a list called empty_list that will later store only the selected grade 
+    for element in dictionary.items(): # loop through each key-value pair (each tuple)
+        for value in element: # for each element in the tuple
+            if value == 1: # if anything (the value) equals to 1 (the key will never be 1 yet we still checked it)
+                empty_list.append(element[0]) # append the key (the alphabet grade)
+    for element in empty_list:
+        print(f"You have selected grade {element}")
+    checkbox_destroy(empty_list)
+    return empty_list
+
+
+# clicking the submit button will call the calculate_state function
+submit_button = Button(root, text='Submit', command=calculate_state)
+submit_button.grid(row=4, column = 1, sticky=W, pady=4)
+submit_button
+
+quit_button = Button(root, text='Quit', command=root.quit)
+quit_button.grid(row=4, column = 3, sticky=W, pady=4) # create a quit button, on call then the quit function will be applied to master the tk()
+quit_button
+
+mainloop()
+
