@@ -118,3 +118,168 @@ quit_button
 
 mainloop()
 
+
+
+###########################################################################################################################################################
+############################################################# sort data of the csv course file ############################################################
+###########################################################################################################################################################
+
+import csv
+
+# Specify the input and output file names
+input_file = '/Path/course_credits.csv/'
+output_file = 'Path/updated_courses.csv/'
+
+updated_rows = []
+
+with open(input_file, 'r', newline='') as csvfile:
+    reader = csv.DictReader(csvfile)
+
+    for row in reader:
+        course = row['Course']
+
+        # Assign Year and Type based on course name
+        if course.endswith('3A'):
+            row['Year'], row['Type'] = 3, 'A'
+        elif course.endswith('3B'):
+            row['Year'], row['Type'] = 3, 'B'
+        elif course.endswith('CORE'):
+            row['Year'], row['Type'] = 4, 'core'
+        elif course.endswith('OPTION'):
+            row['Year'], row['Type'] = 4, 'option'
+        elif course.endswith('PROJECT'):
+            row['Year'], row['Type'] = 4, 'project'
+        else:
+            continue  # I don't assign NA, instead I dumped those courses from the csv instead, not writing it
+
+        updated_rows.append(row)
+
+# Write to CSV 
+if updated_rows: # if this is not an empty list
+    with open(output_file, 'w', newline='') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=updated_rows[0].keys())  # Auto-detect keys
+        writer.writeheader()
+        writer.writerows(updated_rows)
+
+    print(f"Updated CSV saved as {output_file}")
+else:
+    print("No valid courses found.")
+
+############################################################################################################################################################
+################################### go to university website biology subject obtain course list for level 4 ################################################
+############################################################################################################################################################
+
+# could have output only 1 csv instead of 2 csv (one for course_list, one for course_assessment details without course name
+# but leave it for now
+
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+import time
+import pandas as pd
+
+# Start WebDriver
+driver = webdriver.Chrome()
+
+# Open the webpage
+url = "https://www.gla.ac.uk/coursecatalogue/courselist/?code=BIOL&name=Biology+and+Biomedical+Sciences"
+driver.get(url)
+time.sleep(3)  # Allow time for elements to load
+
+# Accept cookies if needed
+try:
+    accept_button = driver.find_element(By.XPATH, "//button[contains(text(),'accept all')]")
+    accept_button.click()
+    time.sleep(0.5)
+    print("Cookies accepted successfully.")
+except:
+    print("No 'accept all' button found or already accepted.")
+
+# Click the Level 4 section link
+try:
+    level_4_link = driver.find_element(By.LINK_TEXT, "Level 4 (SCQF level 10)")
+    driver.execute_script("arguments[0].scrollIntoView();", level_4_link)  # Scroll into view
+    time.sleep(0.5)
+    level_4_link.click()
+    time.sleep(1)  # Allow content to load
+except Exception as e:
+    print(f"Could not click Level 4: {e}")
+
+# Extract only Level 4 courses
+try:
+    level_4_section = driver.find_element(By.XPATH, "//h2[contains(text(), 'Level 4')]")
+    # driver.find_element(By.XPATH, "//h2[contains(text(), 'Level 4')]")
+    # ➜ This looks for an <h2> header containing the text "Level 4".
+    # ➜ XPath syntax contains(text(), 'Level 4') helps find elements when the text isn't an exact match.
+ 
+    course_list = level_4_section.find_element(By.XPATH, "./following-sibling::ul")
+    # following-sibling::ul
+    # ➜ This finds the next <ul> list that appears after the "Level 4" heading.
+    # ➜ This ensures that we only get courses from Level 4 (ignoring other lists).
+    
+    courses = course_list.find_elements(By.TAG_NAME, "a")
+    # Find all clickable course names (inside <a> tags)
+
+    course_list = [] # make an empty list to store the output of course name and course code
+    for course in courses:
+        course_name = course.text.strip()
+        course_url = course.get_attribute("href")
+        #print(f"Course: {course_name}, URL: {course_url}")
+        course_list.append({"Course": course_name, "url" : course_url})
+    df = pd.DataFrame(course_list) # convert the list of dictionary into a dataframe
+
+
+    credit_list = [] # create a list to store the credit
+    assessment_string = []
+    for url in df["url"].unique(): # try click on each url first
+        driver.get(url)
+
+        try:
+            credits_element = driver.find_element(By.XPATH, "//li[strong[contains(text(),'Credits')]]")
+            credit = credits_element.text.replace("Credits: ", "").strip()
+            credit_list.append({"Credit": credit})
+
+            assessment_element = driver.find_element(By.XPATH, "//h3[contains(text(),'Assessment')]")
+            assessment = assessment_element.text.strip()
+
+            # Locate the "Assessment" section first
+            assessment_section = driver.find_element(By.XPATH, "//h3[contains(text(),'Assessment')]")
+
+            # Find the FIRST div following the Assessment header
+            first_div = assessment_section.find_element(By.XPATH, "./following-sibling::div[1]")
+
+            # Extract all span elements inside this div
+            spans = first_div.find_elements(By.TAG_NAME, "span")
+
+            # Store assessment text
+            assessment_text = []
+            for span in spans:
+                text = span.text.strip()
+                assessment_text.append(text)
+
+            # Join all collected spans into a readable sentence, thought of storing the spans for processing but maybe natural language processing should be used instead, faster, but haven't learnt
+            final_assessment = " ".join(assessment_text)
+            assessment_string.append({"Assessment": final_assessment})
+
+        except Exception as e:
+            print(f"Error extracting credits or assessment: {e}")
+
+    assess = pd.DataFrame(assessment_string) # convert the list of final_assessment into a dataframe
+    # Save the dataframe
+    saved_file = '/Path/course_assessment.csv/'
+    assess.to_csv('/Path/course_assessment.csv/', index=False)
+  
+    data = pd.DataFrame(credit_list) # convert the list of dictionary into a dataframe
+
+    # Combine the course_list dataframe with the course credits dataframe
+    combined_df = pd.concat([df, data], axis=1)
+    # Save the dataframe
+    saved_file = '/Path/course_credits.csv/'
+    combined_df.to_csv('/Path/course_credits.csv/', index=False)
+
+except Exception as e:
+    print(f"Error extracting Level 4 courses: {e}")
+
+# Close the browser
+driver.quit()
+
+
