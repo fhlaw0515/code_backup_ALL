@@ -1,0 +1,112 @@
+# try use natural language processing model
+
+
+# token and ent has similar functionality
+# token >>> tokem.text (text) and token.pos_ (verb, noun, how this token positioned in the whole doc)
+# ent >>> ent.text (text) and ent.label_ (organization, percentage, ordinal term)
+
+# token
+# how do you get access to the token object and to the ent object?
+# token is the individual element of the doc (an iterable stuff)
+# for token in doc:
+#    my_token = token
+
+# ent
+# ent is the individual element of the doc.ent (an iterable stuff again)
+# # for ent in doc.ent:
+#    my_ent = ent
+
+
+# you need to access the list of ent using doc.ent first
+# then the individual element is your ent
+
+# so both token and ent are an object that has attributes and can be accessed using its funtcion using dot
+# token.text/ ent.text
+# token.pos_ / ent.label_
+# they are both also an element of an iterable object
+
+# actually maybe I was wrong
+# token and ent they can use the same .text
+# because .text maybe is a fucntion of the whole class or sth, whenever you call .text, you get the text of that instance
+# maybe thats inheritanceor sth that entity is a child of the parent token, no idea
+# let's leave it
+
+#############
+
+# use doc = nlp(text)
+#### doc is a list of token (an object)?
+# I dont care if it is a real list, just that, it is iterable
+# [token, token, token, token]
+#### you can loop over the list
+# for token in doc:
+# do something
+
+
+#### the token is an object
+#### get the associated text, you use token.text
+#### you can also use token.pos_
+#### this gives your the verb, noun, adverb etc
+
+
+
+# doc also has entity
+# use doc.ents then you get the whole list of entity of the doc
+# [ent, ent, ent, ent, ent]
+
+import spacy
+
+nlp = spacy.load("en_core_web_sm") # load the model
+text = "The University of Glasgow uses a grading scale."
+
+
+doc = nlp(text) # this is the line to process the text using nlp, after processing, all stuff, metadata,
+# like object attributes or sth I guess, distinction is a noun, 60 is a numebr,
+# university of glasgow is an organization, at is an adverb, achieve is a verb, these stuff also got stored along with each of the individuals processed word
+# so doc (document) is like a dataframe or sth i mean
+# now instead of looping over element in text.split(), split by space, this time loop over all token, look at one token at a time
+
+tokens = [token.text for token in doc] # extract individual words
+# this line mean,
+# tokens = [] 
+# for token in doc:
+#     token_text = token.text
+#     tokens.append(token_text)
+
+#print(tokens)
+
+#### individuals words is the tokens ####
+
+
+# Named Entity Recognition (organisation, number, first is ordinal (an order stuff) )
+text = 'A First Class degree at University of Glasgow requires 70%'
+
+doc = nlp(text)
+
+# use doc.ents to access the list of entity in the whole dataframe
+# for every entity
+# get the text associated with the ent using ent.text
+# also get the label_ ( meaning the Organization, the percent etc, more like a classification label like classification of image?)
+# use ent.label
+
+for ent in doc.ents:
+    print(ent.text, "->", ent.label_)
+
+
+# Part-of-speech tagging, role of word in a sentence, verb, noun?
+doc = nlp(text)
+
+for token in doc:
+    print(token.text, "->", token.pos_)
+
+
+
+
+# finding keywords in text
+# this is just a simple loop, no npl, need exact match with same case
+text = 'Someone asked me about the standards at this university. Let me tell you right now. Students must achieve at least 80% to get a distinction. If their final score is between 60% and 69%, then they will receives an upper second-class degree. If they dont attened exams then they will not get a degree.'  
+
+keywords = {"upper second-class", "distinction","80%", "final score"}
+
+for word in text.split():
+    if word in keywords:
+        print("Found: ", word)
