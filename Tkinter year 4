@@ -1,50 +1,4 @@
 
-
-###########################################################################################################################################################
-############################################################# sort data of the csv course file ############################################################
-###########################################################################################################################################################
-
-import csv
-
-# Specify the input and output file names
-input_file = '/Path/course_credits.csv/'
-output_file = 'Path/updated_courses.csv/'
-
-updated_rows = []
-
-with open(input_file, 'r', newline='') as csvfile:
-    reader = csv.DictReader(csvfile)
-
-    for row in reader:
-        course = row['Course']
-
-        # Assign Year and Type based on course name
-        if course.endswith('3A'):
-            row['Year'], row['Type'] = 3, 'A'
-        elif course.endswith('3B'):
-            row['Year'], row['Type'] = 3, 'B'
-        elif course.endswith('CORE'):
-            row['Year'], row['Type'] = 4, 'core'
-        elif course.endswith('OPTION'):
-            row['Year'], row['Type'] = 4, 'option'
-        elif course.endswith('PROJECT'):
-            row['Year'], row['Type'] = 4, 'project'
-        else:
-            continue  # I don't assign NA, instead I dumped those courses from the csv instead, not writing it
-
-        updated_rows.append(row)
-
-# Write to CSV 
-if updated_rows: # if this is not an empty list
-    with open(output_file, 'w', newline='') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=updated_rows[0].keys())  # Auto-detect keys
-        writer.writeheader()
-        writer.writerows(updated_rows)
-
-    print(f"Updated CSV saved as {output_file}")
-else:
-    print("No valid courses found.")
-
 ############################################################################################################################################################
 ################################### go to university website biology subject obtain course list for level 4 ################################################
 ############################################################################################################################################################
@@ -163,8 +117,69 @@ except Exception as e:
 driver.quit()
 
 
-########################################## 6 June 2025 ########################################################################################################
-# the whole program works until accepting users' input for grade
+
+###########################################################################################################################################################
+############################################################# sort data of the csv course file ############################################################
+###########################################################################################################################################################
+
+import csv
+
+# Specify the input and output file names
+input_file = '/Path/course_credits.csv/'
+output_file = 'Path/updated_courses.csv/'
+
+updated_rows = []
+
+with open(input_file, 'r', newline='') as csvfile:
+    reader = csv.DictReader(csvfile)
+
+    for row in reader:
+        course = row['Course']
+
+        # Assign Year and Type based on course name
+        if course.endswith('3A'):
+            row['Year'], row['Type'] = 3, 'A'
+        elif course.endswith('3B'):
+            row['Year'], row['Type'] = 3, 'B'
+        elif course.endswith('CORE'):
+            row['Year'], row['Type'] = 4, 'core'
+        elif course.endswith('OPTION'):
+            row['Year'], row['Type'] = 4, 'option'
+        elif course.endswith('PROJECT'):
+            row['Year'], row['Type'] = 4, 'project'
+        else:
+            continue  # I don't assign NA, instead I dumped those courses from the csv instead, not writing it
+
+        updated_rows.append(row)
+
+# Write to CSV 
+if updated_rows: # if this is not an empty list
+    with open(output_file, 'w', newline='') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=updated_rows[0].keys())  # Auto-detect keys
+        writer.writeheader()
+        writer.writerows(updated_rows)
+
+    print(f"Updated CSV saved as {output_file}")
+else:
+    print("No valid courses found.")
+
+
+###########################################################################################################################################################
+#######################################################  Tkinter code  -6 June 2025 #######################################################################
+###########################################################################################################################################################
+###########################################################################################################################################################
+
+# use the csv file obtained via above program from the uni website that contains course list and credit (and also assessment details)
+# select year 3/ year 4, display course based on selection, click on courses checkbox, display credits and ask for grades' input
+# after this is finished then need to modify the program so that user can input the grades of different assessment
+# calculate course grade first, before calculating gpa (and degree classification)
+# the gpa calculation is divided into year 3 vs year 4, calculate this seperately 
+# because maybe MSci needs different weighting, has good cause approved then the weighting of year 3 vs 4 also changes
+# so I seperated the year 3 and 4 grade processing
+# also need to expand to other degree programme other than life science, but that will need to change the previous python output csv file, navigate to the whole
+# uni courses website all department, add loop to click into each subject area etc, too complicated I chose to started small, but this should be expanded later
+
+# the whole program works until accepting users' input for grade, haven;t finished
 # next step should be multiplying the input numerical grade point with course credits, sum all courses, divided by total credits
 # also wanted it to be flexible maybe can have dropdown menu to select the alphabetical grade instead, then convert it to numeric before calculation
 # wrote this conversion in year 2 but lost the code, next time write
