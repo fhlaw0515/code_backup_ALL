@@ -17,68 +17,75 @@ class my_gui:
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         # Create a frame inside the canvas
-        scrollable_frame = tk.Frame(canvas)
-        scrollable_frame.pack(fill=tk.BOTH, expand=True)
-        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        self.scrollable_frame = tk.Frame(canvas)
 
-        scrollable_frame.bind("<Configure>",lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        # Create window inside canvas
+        self.canvas_window = canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+        
+        # Update scrollregion when content changes
+        self.scrollable_frame.bind(
+            "<Configure>",lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
 
-        self.mbar = tk.Frame(scrollable_frame, relief = 'raised', bd=2)
+        # Update frame width when canvas is resized
+        canvas.bind(
+            "<Configure>",lambda e: canvas.itemconfig(self.canvas_window, width=e.width))
+
+        self.mbar = tk.Frame(self.scrollable_frame, relief = 'raised', bd=2)
         self.mbar.pack(fill = tk.X)
 
-	# Create Home menu
-        self.homebutton = tk.Menubutton(self.mbar, text = 'Home')
-        self.homebutton.pack(side = tk.LEFT)
+	# Create File menu
+        self.filebutton = tk.Menubutton(self.mbar, text = 'Home')
+        self.filebutton.pack(side = tk.LEFT)
 
-        self.homemenu = tk.Menu(self.homebutton, tearoff=0)
-        self.homebutton['menu'] = self.homemenu
+        self.filemenu = tk.Menu(self.filebutton, tearoff=0)
+        self.filebutton['menu'] = self.filemenu
 
-	# Populate Home menu
+	# Populate File menu
 	# call the stub function on root, the stub function has nothing but pass
-        self.homemenu.add('command', label = 'Home', command =  self.stub)
+        self.filemenu.add('command', label = 'Home', command =  self.stub)
 
-        # Create  staff menu
+        # Create  tools menu
         self.staffsbutton = tk.Menubutton(self.mbar, text = 'Staff', )
         self.staffsbutton.pack(side = tk.LEFT)
 
         self.staffsmenu = tk.Menu(self.staffsbutton, tearoff=0)
         self.staffsbutton['menu'] = self.staffsmenu
 
-	# Populate staff menu
+	# Populate tools menu
         self.staffsmenu.add('command', label = 'Staff', command = self.stub)
 
 
-	# Create Contact menu
+	# Create  object menu
         self.contactbutton = tk.Menubutton(self.mbar, text = 'Contact', )
         self.contactbutton.pack(side = tk.LEFT)
 
         self.contactmenu = tk.Menu(self.contactbutton, tearoff=0)
         self.contactbutton['menu'] = self.contactmenu
 
-	# Populate Contact menu
+	# Populate object menu
         self.contactmenu.add('command', label = 'contact', command = self.stub)
 
-	# Create  More menu
+	# Create  edit menu
         self.morebutton = tk.Menubutton(self.mbar, text = 'More', )
         self.morebutton.pack(side = tk.LEFT)
 
         self.moremenu = tk.Menu(self.morebutton, tearoff=0)
         self.morebutton['menu'] = self.moremenu
 
-	# Populate More menu
+	# Populate edit menu
         self.moremenu.add('command', label = 'More', command = self.stub)
 
-	# Create Join menu
+	# Create  view menu
         self.joinbutton = tk.Menubutton(self.mbar, text = 'Join us', )
         self.joinbutton.pack(side = tk.LEFT)
 
         self.joinmenu = tk.Menu(self.joinbutton, tearoff=0)
         self.joinbutton['menu'] = self.joinmenu
 
-	# Populate Join menu
+	# Populate view menu
         self.joinmenu.add('command', label = 'Join', command = self.stub)
 
-	# Create help menu
+	# Create  help menu
         self.helpbutton = tk.Menubutton(self.mbar, text = 'Help', )
         self.helpbutton.pack(side = tk.RIGHT)
 
@@ -89,7 +96,7 @@ class my_gui:
         self.helpmenu.add('command', label = 'help', command = self.stub)
 
         # design the iframe1
-        iframe1 = tk.Frame(scrollable_frame, bd=2, relief=tk.SUNKEN)
+        iframe1 = tk.Frame(self.scrollable_frame, bd=2, relief=tk.SUNKEN)
         tk.Button(iframe1, text='Button').pack(side=tk.LEFT, padx=5)
         tk.Checkbutton(iframe1, text='CheckButton').pack(side=tk.LEFT, padx=5)
 
@@ -106,7 +113,7 @@ class my_gui:
         iframe1.pack(expand=1, fill=tk.X, pady=10, padx=5)
 
         # design the iframe2
-        iframe2 = tk.Frame(scrollable_frame, bd=2, relief=tk.RIDGE)
+        iframe2 = tk.Frame(self.scrollable_frame, bd=2, relief=tk.RIDGE)
         tk.Label(iframe2, text='Enter your grade:').pack(side=tk.LEFT, padx=5)
         t = tk.StringVar()
 
@@ -117,7 +124,7 @@ class my_gui:
 
 
         # design iframe3
-        iframe3 = tk.Frame(scrollable_frame, bd=2, relief=tk.GROOVE)
+        iframe3 = tk.Frame(self.scrollable_frame, bd=2, relief=tk.GROOVE)
         
         # make a listbox under the iframe3
         listbox = tk.Listbox(iframe3, height=5) # height is the number of options?
@@ -129,7 +136,7 @@ class my_gui:
         iframe3.pack(expand=1, fill=tk.X, pady=10, padx=5)
 
         # iframe4 is an outer frame
-        iframe4 = tk.Frame(scrollable_frame, bd=2, relief=tk.SUNKEN)
+        iframe4 = tk.Frame(self.scrollable_frame, bd=2, relief=tk.SUNKEN)
         # pack the iframe4 (outer frame)
         iframe4.pack(fill=tk.BOTH, expand=True)
 
@@ -160,7 +167,7 @@ class my_gui:
 
         # try make a new frame and dislay an image
         # Frame for image (iframe5)
-        iframe5 = tk.Frame(scrollable_frame, bd=2, relief=tk.RAISED)
+        iframe5 = tk.Frame(self.scrollable_frame, bd=2, relief=tk.RAISED)
 
         # Keep a reference to the image
         image = tk.PhotoImage(file="pen_image.png")
@@ -203,7 +210,6 @@ root.option_add('*font', ('verdana', 10, 'bold'))
 all = my_gui(root) #create an instance of the class my_gui, supply root as argument
 root.title('Tkinter Widgets')
 root.mainloop()
-
 
 
 ############################################################################################################################################################
