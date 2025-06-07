@@ -1,13 +1,29 @@
-##################################### tkinter learning how to create frame and scrollbar ###################################################################
 #from tkinter import *
 import tkinter as tk
 
 class my_gui:
     def __init__(self, your_window):
+
+        your_window.title("Scrollable Frame Example")
+        
         frame = tk.Frame(your_window, width=500, height=400, bd=1)
         frame.pack(fill=tk.BOTH, expand=True)
 
-        self.mbar = tk.Frame(frame, relief = 'raised', bd=2)
+        canvas = tk.Canvas(frame)
+        scrollbar = tk.Scrollbar(frame, orient=tk.VERTICAL, command=canvas.yview)
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        # Create a frame inside the canvas
+        scrollable_frame = tk.Frame(canvas)
+        scrollable_frame.pack(fill=tk.BOTH, expand=True)
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+
+        scrollable_frame.bind("<Configure>",lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+
+        self.mbar = tk.Frame(scrollable_frame, relief = 'raised', bd=2)
         self.mbar.pack(fill = tk.X)
 
 	# Create File menu
@@ -73,7 +89,7 @@ class my_gui:
         self.helpmenu.add('command', label = 'help', command = self.stub)
 
         # design the iframe1
-        iframe1 = tk.Frame(frame, bd=2, relief=tk.SUNKEN)
+        iframe1 = tk.Frame(scrollable_frame, bd=2, relief=tk.SUNKEN)
         tk.Button(iframe1, text='Button').pack(side=tk.LEFT, padx=5)
         tk.Checkbutton(iframe1, text='CheckButton').pack(side=tk.LEFT, padx=5)
 
@@ -90,7 +106,7 @@ class my_gui:
         iframe1.pack(expand=1, fill=tk.X, pady=10, padx=5)
 
         # design the iframe2
-        iframe2 = tk.Frame(frame, bd=2, relief=tk.RIDGE)
+        iframe2 = tk.Frame(scrollable_frame, bd=2, relief=tk.RIDGE)
         tk.Label(iframe2, text='Enter your grade:').pack(side=tk.LEFT, padx=5)
         t = tk.StringVar()
 
@@ -101,7 +117,7 @@ class my_gui:
 
 
         # design iframe3
-        iframe3 = tk.Frame(frame, bd=2, relief=tk.GROOVE)
+        iframe3 = tk.Frame(scrollable_frame, bd=2, relief=tk.GROOVE)
         
         # make a listbox under the iframe3
         listbox = tk.Listbox(iframe3, height=5) # height is the number of options?
@@ -112,9 +128,9 @@ class my_gui:
         # design the location of iframe3
         iframe3.pack(expand=1, fill=tk.X, pady=10, padx=5)
 
-
         # iframe4 is an outer frame
-        iframe4 = tk.Frame(frame, bd=2, relief=tk.SUNKEN)
+        iframe4 = tk.Frame(scrollable_frame, bd=2, relief=tk.SUNKEN)
+        # pack the iframe4 (outer frame)
         iframe4.pack(fill=tk.BOTH, expand=True)
 
         # Create am inner frame called text_frame to hold the text widget and scrollbars
@@ -141,21 +157,18 @@ class my_gui:
             lines = fd.read()
             text.insert(tk.END, lines)
 
-        # pack the iframe4 (outer frame)
-        iframe4.pack(expand=1, fill=tk.X, pady=10, padx=5)
 
         # try make a new frame and dislay an image
         # Frame for image (iframe5)
-        iframe5 = tk.Frame(frame, bd=2, relief=tk.RAISED)
+        iframe5 = tk.Frame(scrollable_frame, bd=2, relief=tk.RAISED)
 
         # Keep a reference to the image
         image = tk.PhotoImage(file="pen_image.png")
         label = tk.Label(iframe5, image=image)
         label.image = image # <-- This line is crucial!
-        label.pack(expand=1, fill=tk.X, pady=10, padx=5)
-
-
-        iframe5.pack(expand=1, fill=tk.X, pady=10, padx=5)
+        label.pack(fill=tk.BOTH, expand=True, pady=10, padx=5)
+        
+        iframe5.pack(fill=tk.BOTH, expand=True, pady=10, padx=5)
 
         # make the iframe5
         #iframe5 = Frame(frame, bd=2, relief=RAISED)
