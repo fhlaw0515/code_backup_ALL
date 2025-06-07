@@ -26,59 +26,59 @@ class my_gui:
         self.mbar = tk.Frame(scrollable_frame, relief = 'raised', bd=2)
         self.mbar.pack(fill = tk.X)
 
-	# Create File menu
-        self.filebutton = tk.Menubutton(self.mbar, text = 'Home')
-        self.filebutton.pack(side = tk.LEFT)
+	# Create Home menu
+        self.homebutton = tk.Menubutton(self.mbar, text = 'Home')
+        self.homebutton.pack(side = tk.LEFT)
 
-        self.filemenu = tk.Menu(self.filebutton, tearoff=0)
-        self.filebutton['menu'] = self.filemenu
+        self.homemenu = tk.Menu(self.homebutton, tearoff=0)
+        self.homebutton['menu'] = self.homemenu
 
-	# Populate File menu
+	# Populate Home menu
 	# call the stub function on root, the stub function has nothing but pass
-        self.filemenu.add('command', label = 'Home', command =  self.stub)
+        self.homemenu.add('command', label = 'Home', command =  self.stub)
 
-        # Create  tools menu
+        # Create  staff menu
         self.staffsbutton = tk.Menubutton(self.mbar, text = 'Staff', )
         self.staffsbutton.pack(side = tk.LEFT)
 
         self.staffsmenu = tk.Menu(self.staffsbutton, tearoff=0)
         self.staffsbutton['menu'] = self.staffsmenu
 
-	# Populate tools menu
+	# Populate staff menu
         self.staffsmenu.add('command', label = 'Staff', command = self.stub)
 
 
-	# Create  object menu
+	# Create Contact menu
         self.contactbutton = tk.Menubutton(self.mbar, text = 'Contact', )
         self.contactbutton.pack(side = tk.LEFT)
 
         self.contactmenu = tk.Menu(self.contactbutton, tearoff=0)
         self.contactbutton['menu'] = self.contactmenu
 
-	# Populate object menu
+	# Populate Contact menu
         self.contactmenu.add('command', label = 'contact', command = self.stub)
 
-	# Create  edit menu
+	# Create  More menu
         self.morebutton = tk.Menubutton(self.mbar, text = 'More', )
         self.morebutton.pack(side = tk.LEFT)
 
         self.moremenu = tk.Menu(self.morebutton, tearoff=0)
         self.morebutton['menu'] = self.moremenu
 
-	# Populate edit menu
+	# Populate More menu
         self.moremenu.add('command', label = 'More', command = self.stub)
 
-	# Create  view menu
+	# Create Join menu
         self.joinbutton = tk.Menubutton(self.mbar, text = 'Join us', )
         self.joinbutton.pack(side = tk.LEFT)
 
         self.joinmenu = tk.Menu(self.joinbutton, tearoff=0)
         self.joinbutton['menu'] = self.joinmenu
 
-	# Populate view menu
+	# Populate Join menu
         self.joinmenu.add('command', label = 'Join', command = self.stub)
 
-	# Create  help menu
+	# Create help menu
         self.helpbutton = tk.Menubutton(self.mbar, text = 'Help', )
         self.helpbutton.pack(side = tk.RIGHT)
 
