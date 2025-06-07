@@ -9,6 +9,20 @@
 #Add a Scrollbar and connect it to the Canvas.
 
 
+#2. side, fill, and expand
+#These are options used with .pack() to control how widgets are placed.
+
+#side=tk.LEFT: Place the widget on the left side.
+#side=tk.RIGHT: Place it on the right.
+#side=tk.TOP: Place it at the top.
+#side=tk.BOTTOM: Place it at the bottom.
+
+#fill=tk.X: Stretch horizontally.
+#fill=tk.Y: Stretch vertically.
+#fill=tk.BOTH: Stretch both ways.
+#expand
+#expand=True: Let the widget take up extra space if available.
+
 
 #from tkinter import *
 import tkinter as tk
@@ -32,12 +46,21 @@ class my_gui:
         self.scrollable_frame = tk.Frame(canvas)
 
         # Create window inside canvas
+        # canvas.create_window(...), This tells the canvas: “Put this widget (like a frame) inside me at this position.”
+        # anchor="nw": Align the top-left corner of the frame to the top-left of the canvas.
         self.canvas_window = canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
-        
+
+        # bind means “When something happens (like resizing), run this function.”
+        # here, the function is canvas.configure(...)
+        # canvas.configure(...), This updates the canvas settings. For example:
+        # canvas.configure(scrollregion=canvas.bbox("all"));  tells the canvas: “Update the scrollable area to fit all the content.”
+
         # Update scrollregion when content changes
         self.scrollable_frame.bind(
             "<Configure>",lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
 
+
+        # A lambda is a short way to write a function.
         # Update frame width when canvas is resized
         canvas.bind(
             "<Configure>",lambda e: canvas.itemconfig(self.canvas_window, width=e.width))
