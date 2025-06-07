@@ -1,3 +1,179 @@
+##################################### tkinter learning how to create frame and scrollbar ###################################################################
+from tkinter import *
+
+class my_gui:
+    def __init__(self, your_window):
+        frame = Frame(your_window, width=500, height=400, bd=1)
+        frame.pack()
+
+        self.mbar = Frame(frame, relief = 'raised', bd=2)
+        self.mbar.pack(fill = X)
+
+	# Create File menu
+        self.filebutton = Menubutton(self.mbar, text = 'Home')
+        self.filebutton.pack(side = LEFT)
+
+        self.filemenu = Menu(self.filebutton, tearoff=0)
+        self.filebutton['menu'] = self.filemenu
+
+	# Populate File menu
+	# call the stub function on root, the stub function has nothing but pass
+        self.filemenu.add('command', label = 'Home', command =  self.stub)
+
+        # Create  tools menu
+        self.staffsbutton = Menubutton(self.mbar, text = 'Staff', )
+        self.staffsbutton.pack(side = LEFT)
+
+        self.staffsmenu = Menu(self.staffsbutton, tearoff=0)
+        self.staffsbutton['menu'] = self.staffsmenu
+
+	# Populate tools menu
+        self.staffsmenu.add('command', label = 'Staff', command = self.stub)
+
+
+	# Create  object menu
+        self.contactbutton = Menubutton(self.mbar, text = 'Contact', )
+        self.contactbutton.pack(side = LEFT)
+
+        self.contactmenu = Menu(self.contactbutton, tearoff=0)
+        self.contactbutton['menu'] = self.contactmenu
+
+	# Populate object menu
+        self.contactmenu.add('command', label = 'contact', command = self.stub)
+
+	# Create  edit menu
+        self.morebutton = Menubutton(self.mbar, text = 'More', )
+        self.morebutton.pack(side = LEFT)
+
+        self.moremenu = Menu(self.morebutton, tearoff=0)
+        self.morebutton['menu'] = self.moremenu
+
+	# Populate edit menu
+        self.moremenu.add('command', label = 'More', command = self.stub)
+
+	# Create  view menu
+        self.joinbutton = Menubutton(self.mbar, text = 'Join us', )
+        self.joinbutton.pack(side = LEFT)
+
+        self.joinmenu = Menu(self.joinbutton, tearoff=0)
+        self.joinbutton['menu'] = self.joinmenu
+
+	# Populate view menu
+        self.joinmenu.add('command', label = 'Join', command = self.stub)
+
+	# Create  help menu
+        self.helpbutton = Menubutton(self.mbar, text = 'Help', )
+        self.helpbutton.pack(side = RIGHT)
+
+        self.helpmenu = Menu(self.helpbutton, tearoff=0)
+        self.helpbutton['menu'] = self.helpmenu
+
+	# Populate help menu
+        self.helpmenu.add('command', label = 'help', command = self.stub)
+
+        # design the iframe1
+        iframe1 = Frame(frame, bd=2, relief=SUNKEN)
+        Button(iframe1, text='Button').pack(side=LEFT, padx=5)
+        Checkbutton(iframe1, text='CheckButton').pack(side=LEFT, padx=5)
+
+        v=IntVar()
+        Radiobutton(iframe1, text='Achievement', variable=v,
+                    value=1).pack(side=RIGHT, anchor=W)
+        Radiobutton(iframe1, text='Motivation', variable=v,
+                    value=2).pack(side=RIGHT, anchor=W)
+        Radiobutton(iframe1, text='Happiness', variable=v,
+                    value=3).pack(side=RIGHT, anchor=W)
+
+
+        # design the position of iframe1
+        iframe1.pack(expand=1, fill=X, pady=10, padx=5)
+
+        # design the iframe2
+        iframe2 = Frame(frame, bd=2, relief=RIDGE)
+        Label(iframe2, text='Enter your grade:').pack(side=LEFT, padx=5)
+        t = StringVar()
+
+        # design the entry box contained in the iframe2, pack it to the right side
+        Entry(iframe2, textvariable=t, bg='white').pack(side=RIGHT, padx=5)
+        t.set('GRADE') # default
+        iframe2.pack(expand=1, fill=X, pady=10, padx=5)
+
+
+        # design iframe3
+        iframe3 = Frame(frame, bd=2, relief=GROOVE)
+        
+        # make a listbox under the iframe3
+        listbox = Listbox(iframe3, height=5) # height is the number of options?
+        for line in ['Year 1','Year 2','Year 3','Year 4', 'Year 5']:
+            listbox.insert(END, line)
+        listbox.pack(fill=X, padx=5) # design the location of listbox
+
+        # design the location of iframe3
+        iframe3.pack(expand=1, fill=X, pady=10, padx=5)
+        
+        iframe4 = Frame(frame, bd=2, relief=SUNKEN)
+
+        # create a text box on iframe4
+        text=Text(iframe4, height=10, width =65, wrap = NONE)
+        text.pack(side=LEFT, fill=BOTH, expand=True)
+
+        # Insert file content
+        with open('/Path/Introduction.txt/') as fd:
+            lines = fd.read()
+            text.insert(END, lines)
+
+        # Vertical scrollbar
+        sb = Scrollbar(iframe4, orient=VERTICAL, command=text.yview)
+        sb.pack(side=RIGHT, fill=Y)
+        text.configure(yscrollcommand=sb.set)
+
+        # Horizontal scrollbar (in a separate frame below) # the horizontal scroll bar is on root the whole window, has problem, dont know how to solve yet
+        sb_h = Scrollbar(root, orient=HORIZONTAL, command=text.xview)
+        sb_h.pack(fill=X)
+        text.configure(xscrollcommand=sb_h.set)
+
+        # design the location of iframe4
+        iframe4.pack(expand=1, fill=X, pady=10, padx=5)
+
+
+
+
+        # make the iframe5
+        #iframe5 = Frame(frame, bd=2, relief=RAISED)
+
+        # make a scale slide button
+        #Scale(iframe5, from_=0.0, to=50.0, label='Score',
+        #        orient=HORIZONTAL).pack(side=LEFT)
+        #c = Canvas(iframe5, bg='white', width=340, height=100)
+        #c.pack()
+        
+        # use the canvas to draw many ovals
+        #for i in range(25):
+        #    c.create_oval(5+(4*i),5+(3*i),(5*i)+60,(i)+60, fill='gray70')
+        #c.create_text(260, 80, text='Canvas', font=('verdana', 10, 'bold'))
+
+        # design the location of iframe5
+        #iframe5.pack(expand=1, fill=X, pady=10, padx=5)
+        
+        #iframen = Frame(frame, bd=2, relief=FLAT)
+        #Message(iframen, text='Thank you for using our app', width=300,
+        #        relief=SUNKEN).pack(fill=X, padx=5)
+        #iframen.pack(expand=1, fill=X, pady=10, padx=5)
+
+#    def quit(self):
+#        root.destroy()
+
+    def stub(self):
+        pass
+    
+root = Tk()# make a tkinter window and call it root
+root.option_add('*font', ('verdana', 10, 'bold'))
+all = my_gui(root) #create an instance of the class my_gui, supply root as argument
+root.title('Tkinter Widgets')
+root.mainloop()
+
+
+
 
 ############################################################################################################################################################
 ################################### go to university website biology subject obtain course list for level 4 ################################################
