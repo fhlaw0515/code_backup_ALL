@@ -1,3 +1,15 @@
+#1. Frame, Canvas, and Scrollbar
+#Frame: A container to hold other widgets.
+#Canvas: A special widget that can display graphics, shapes, or other widgets. It supports scrolling.
+#Scrollbar: A widget that lets you scroll content vertically or horizontally.
+#To make a scrollable area, we:
+
+#Put a Canvas inside a Frame.
+#Put another Frame inside the Canvas (this is where your content goes).
+#Add a Scrollbar and connect it to the Canvas.
+
+
+
 #from tkinter import *
 import tkinter as tk
 
