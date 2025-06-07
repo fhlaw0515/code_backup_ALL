@@ -1,19 +1,20 @@
 ##################################### tkinter learning how to create frame and scrollbar ###################################################################
-from tkinter import *
+#from tkinter import *
+import tkinter as tk
 
 class my_gui:
     def __init__(self, your_window):
-        frame = Frame(your_window, width=500, height=400, bd=1)
-        frame.pack()
+        frame = tk.Frame(your_window, width=500, height=400, bd=1)
+        frame.pack(fill=tk.BOTH, expand=True)
 
-        self.mbar = Frame(frame, relief = 'raised', bd=2)
-        self.mbar.pack(fill = X)
+        self.mbar = tk.Frame(frame, relief = 'raised', bd=2)
+        self.mbar.pack(fill = tk.X)
 
 	# Create File menu
-        self.filebutton = Menubutton(self.mbar, text = 'Home')
-        self.filebutton.pack(side = LEFT)
+        self.filebutton = tk.Menubutton(self.mbar, text = 'Home')
+        self.filebutton.pack(side = tk.LEFT)
 
-        self.filemenu = Menu(self.filebutton, tearoff=0)
+        self.filemenu = tk.Menu(self.filebutton, tearoff=0)
         self.filebutton['menu'] = self.filemenu
 
 	# Populate File menu
@@ -21,10 +22,10 @@ class my_gui:
         self.filemenu.add('command', label = 'Home', command =  self.stub)
 
         # Create  tools menu
-        self.staffsbutton = Menubutton(self.mbar, text = 'Staff', )
-        self.staffsbutton.pack(side = LEFT)
+        self.staffsbutton = tk.Menubutton(self.mbar, text = 'Staff', )
+        self.staffsbutton.pack(side = tk.LEFT)
 
-        self.staffsmenu = Menu(self.staffsbutton, tearoff=0)
+        self.staffsmenu = tk.Menu(self.staffsbutton, tearoff=0)
         self.staffsbutton['menu'] = self.staffsmenu
 
 	# Populate tools menu
@@ -32,111 +33,129 @@ class my_gui:
 
 
 	# Create  object menu
-        self.contactbutton = Menubutton(self.mbar, text = 'Contact', )
-        self.contactbutton.pack(side = LEFT)
+        self.contactbutton = tk.Menubutton(self.mbar, text = 'Contact', )
+        self.contactbutton.pack(side = tk.LEFT)
 
-        self.contactmenu = Menu(self.contactbutton, tearoff=0)
+        self.contactmenu = tk.Menu(self.contactbutton, tearoff=0)
         self.contactbutton['menu'] = self.contactmenu
 
 	# Populate object menu
         self.contactmenu.add('command', label = 'contact', command = self.stub)
 
 	# Create  edit menu
-        self.morebutton = Menubutton(self.mbar, text = 'More', )
-        self.morebutton.pack(side = LEFT)
+        self.morebutton = tk.Menubutton(self.mbar, text = 'More', )
+        self.morebutton.pack(side = tk.LEFT)
 
-        self.moremenu = Menu(self.morebutton, tearoff=0)
+        self.moremenu = tk.Menu(self.morebutton, tearoff=0)
         self.morebutton['menu'] = self.moremenu
 
 	# Populate edit menu
         self.moremenu.add('command', label = 'More', command = self.stub)
 
 	# Create  view menu
-        self.joinbutton = Menubutton(self.mbar, text = 'Join us', )
-        self.joinbutton.pack(side = LEFT)
+        self.joinbutton = tk.Menubutton(self.mbar, text = 'Join us', )
+        self.joinbutton.pack(side = tk.LEFT)
 
-        self.joinmenu = Menu(self.joinbutton, tearoff=0)
+        self.joinmenu = tk.Menu(self.joinbutton, tearoff=0)
         self.joinbutton['menu'] = self.joinmenu
 
 	# Populate view menu
         self.joinmenu.add('command', label = 'Join', command = self.stub)
 
 	# Create  help menu
-        self.helpbutton = Menubutton(self.mbar, text = 'Help', )
-        self.helpbutton.pack(side = RIGHT)
+        self.helpbutton = tk.Menubutton(self.mbar, text = 'Help', )
+        self.helpbutton.pack(side = tk.RIGHT)
 
-        self.helpmenu = Menu(self.helpbutton, tearoff=0)
+        self.helpmenu = tk.Menu(self.helpbutton, tearoff=0)
         self.helpbutton['menu'] = self.helpmenu
 
 	# Populate help menu
         self.helpmenu.add('command', label = 'help', command = self.stub)
 
         # design the iframe1
-        iframe1 = Frame(frame, bd=2, relief=SUNKEN)
-        Button(iframe1, text='Button').pack(side=LEFT, padx=5)
-        Checkbutton(iframe1, text='CheckButton').pack(side=LEFT, padx=5)
+        iframe1 = tk.Frame(frame, bd=2, relief=tk.SUNKEN)
+        tk.Button(iframe1, text='Button').pack(side=tk.LEFT, padx=5)
+        tk.Checkbutton(iframe1, text='CheckButton').pack(side=tk.LEFT, padx=5)
 
-        v=IntVar()
-        Radiobutton(iframe1, text='Achievement', variable=v,
-                    value=1).pack(side=RIGHT, anchor=W)
-        Radiobutton(iframe1, text='Motivation', variable=v,
-                    value=2).pack(side=RIGHT, anchor=W)
-        Radiobutton(iframe1, text='Happiness', variable=v,
-                    value=3).pack(side=RIGHT, anchor=W)
+        v=tk.IntVar()
+        tk.Radiobutton(iframe1, text='Achievement', variable=v,
+                    value=1).pack(side=tk.RIGHT, anchor=tk.W)
+        tk.Radiobutton(iframe1, text='Motivation', variable=v,
+                    value=2).pack(side=tk.RIGHT, anchor=tk.W)
+        tk.Radiobutton(iframe1, text='Happiness', variable=v,
+                    value=3).pack(side=tk.RIGHT, anchor=tk.W)
 
 
         # design the position of iframe1
-        iframe1.pack(expand=1, fill=X, pady=10, padx=5)
+        iframe1.pack(expand=1, fill=tk.X, pady=10, padx=5)
 
         # design the iframe2
-        iframe2 = Frame(frame, bd=2, relief=RIDGE)
-        Label(iframe2, text='Enter your grade:').pack(side=LEFT, padx=5)
-        t = StringVar()
+        iframe2 = tk.Frame(frame, bd=2, relief=tk.RIDGE)
+        tk.Label(iframe2, text='Enter your grade:').pack(side=tk.LEFT, padx=5)
+        t = tk.StringVar()
 
         # design the entry box contained in the iframe2, pack it to the right side
-        Entry(iframe2, textvariable=t, bg='white').pack(side=RIGHT, padx=5)
+        tk.Entry(iframe2, textvariable=t, bg='white').pack(side=tk.RIGHT, padx=5)
         t.set('GRADE') # default
-        iframe2.pack(expand=1, fill=X, pady=10, padx=5)
+        iframe2.pack(expand=1, fill=tk.X, pady=10, padx=5)
 
 
         # design iframe3
-        iframe3 = Frame(frame, bd=2, relief=GROOVE)
+        iframe3 = tk.Frame(frame, bd=2, relief=tk.GROOVE)
         
         # make a listbox under the iframe3
-        listbox = Listbox(iframe3, height=5) # height is the number of options?
+        listbox = tk.Listbox(iframe3, height=5) # height is the number of options?
         for line in ['Year 1','Year 2','Year 3','Year 4', 'Year 5']:
-            listbox.insert(END, line)
-        listbox.pack(fill=X, padx=5) # design the location of listbox
+            listbox.insert(tk.END, line)
+        listbox.pack(fill=tk.X, padx=5) # design the location of listbox
 
         # design the location of iframe3
-        iframe3.pack(expand=1, fill=X, pady=10, padx=5)
-        
-        iframe4 = Frame(frame, bd=2, relief=SUNKEN)
+        iframe3.pack(expand=1, fill=tk.X, pady=10, padx=5)
 
-        # create a text box on iframe4
-        text=Text(iframe4, height=10, width =65, wrap = NONE)
-        text.pack(side=LEFT, fill=BOTH, expand=True)
 
-        # Insert file content
-        with open('/Path/Introduction.txt/') as fd:
-            lines = fd.read()
-            text.insert(END, lines)
+        # iframe4 is an outer frame
+        iframe4 = tk.Frame(frame, bd=2, relief=tk.SUNKEN)
+        iframe4.pack(fill=tk.BOTH, expand=True)
+
+        # Create am inner frame called text_frame to hold the text widget and scrollbars
+        text_frame = tk.Frame(iframe4)
+        text_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Create the Text widget under the inner text_frame (with text and scrollbar contained inside tgt)
+        text = tk.Text(text_frame, wrap=tk.NONE) # wrap=NONE to allow horizontal scrolling
+        text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         # Vertical scrollbar
-        sb = Scrollbar(iframe4, orient=VERTICAL, command=text.yview)
-        sb.pack(side=RIGHT, fill=Y)
+        sb = tk.Scrollbar(text_frame, orient=tk.VERTICAL, command=text.yview)
+        sb.pack(fill=tk.BOTH, expand=True)
         text.configure(yscrollcommand=sb.set)
 
-        # Horizontal scrollbar (in a separate frame below) # the horizontal scroll bar is on root the whole window, has problem, dont know how to solve yet
-        sb_h = Scrollbar(root, orient=HORIZONTAL, command=text.xview)
-        sb_h.pack(fill=X)
+        # Horizontal scrollbar
+        sb_h = tk.Scrollbar(iframe4, orient=tk.HORIZONTAL, command=text.xview)
+        sb_h.pack(fill=tk.BOTH, expand=True)
         text.configure(xscrollcommand=sb_h.set)
 
-        # design the location of iframe4
-        iframe4.pack(expand=1, fill=X, pady=10, padx=5)
+
+        # Insert file content
+        with open('Introduction.txt') as fd:
+            lines = fd.read()
+            text.insert(tk.END, lines)
+
+        # pack the iframe4 (outer frame)
+        iframe4.pack(expand=1, fill=tk.X, pady=10, padx=5)
+
+        # try make a new frame and dislay an image
+        # Frame for image (iframe5)
+        iframe5 = tk.Frame(frame, bd=2, relief=tk.RAISED)
+
+        # Keep a reference to the image
+        image = tk.PhotoImage(file="pen_image.png")
+        label = tk.Label(iframe5, image=image)
+        label.image = image # <-- This line is crucial!
+        label.pack(expand=1, fill=tk.X, pady=10, padx=5)
 
 
-
+        iframe5.pack(expand=1, fill=tk.X, pady=10, padx=5)
 
         # make the iframe5
         #iframe5 = Frame(frame, bd=2, relief=RAISED)
@@ -166,12 +185,11 @@ class my_gui:
     def stub(self):
         pass
     
-root = Tk()# make a tkinter window and call it root
+root = tk.Tk()# make a tkinter window and call it root
 root.option_add('*font', ('verdana', 10, 'bold'))
 all = my_gui(root) #create an instance of the class my_gui, supply root as argument
 root.title('Tkinter Widgets')
 root.mainloop()
-
 
 
 
